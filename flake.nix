@@ -35,7 +35,6 @@
           };
       };
 
-      # Note: This build infrastructure is experimental.
       build = import ./build {
         pyproject-nix = self;
         inherit lib;

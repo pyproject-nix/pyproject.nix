@@ -79,6 +79,8 @@ in
 
     Evaluates PEP-508 environment markers to select correct dependencies for the platform but does not validate version constraints.
 
+    Note: This API is unstable and subject to change.
+
     Type: mkDerivation :: AttrSet -> AttrSet
   */
   mkDerivationEditable =
