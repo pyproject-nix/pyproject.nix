@@ -1,8 +1,7 @@
 # Build
 
 <div class="warning">
-The pyproject.nix build infrastructure is brand new and experimental.
-At this time it's mainly targeted at python2nix authors, and is being tested in uv2nix.
+The pyproject.nix build infrastructure is mainly targeted at python2nix authors, and is being used in uv2nix.
 </div>
 
 Pyproject.nix can be used with nixpkgs `buildPythonPackage`/`packageOverrides`/`withPackages`, but also implements it's own build infrastructure that fixes many structural problems with the nixpkgs implementation.
