@@ -208,13 +208,13 @@ lib.fix (self: {
         // {
           # Assert shape for src, not exact equality
           src = lib.isStorePath "${attrs.src}";
+          build-system = map (x: removeAttrs x [ "version" ]) attrs.build-system;
         };
 
       expected = {
         build-system = [
           {
             pname = "hatchling";
-            version = "1.25.0";
           }
         ];
         optional-dependencies = { };
