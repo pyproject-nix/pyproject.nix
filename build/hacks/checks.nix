@@ -76,7 +76,6 @@ in
               cryptography =
                 (hacks.importCargoLock {
                   prev = prev.cryptography;
-                  cargoRoot = "src/rust";
                 }).overrideAttrs
                   (old: {
                     nativeBuildInputs =
