@@ -7,14 +7,6 @@ pyprojectInstallPhase() {
 
   pushd dist >/dev/null
 
-  if [ -z "${UV_COMPILE_BYTECODE-}" ]; then
-    export UV_COMPILE_BYTECODE=1
-  fi
-
-  if [ -z "${UV_NO_INSTALLER_METADATA-}" ]; then
-    export UV_NO_INSTALLER_METADATA=1
-  fi
-
   for wheel in ./*.whl; do
     @uv@/bin/uv pip --offline --no-cache install --no-deps --link-mode=copy --python=@pythonInterpreter@ --system --prefix "$out" $uvPipInstallFlags "$wheel"
     echo "Successfully installed $wheel"

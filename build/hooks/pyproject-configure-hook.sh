@@ -12,6 +12,23 @@ pyprojectConfigurePhase() {
   # information from the cross compiled Python.
   export PYTHONPATH=@pythonPath@
 
+  # Compile bytecode by default.
+  if [ -z "${UV_COMPILE_BYTECODE-}" ]; then
+    export UV_COMPILE_BYTECODE=1
+  fi
+
+  # Opt out of uv-specific installer metadata that causes non-reproducible builds.
+  if [ -z "${UV_NO_INSTALLER_METADATA-}" ]; then
+    export UV_NO_INSTALLER_METADATA=1
+  fi
+
+  # Don't load uv config from pyproject.toml & such.
+  # Loading config might cause uv-specific behaviour defined in tool.uv such as
+  # find-links to fail at build time.0984dhbb
+  if [ -z "${UV_NO_CONFIG-}" ]; then
+    export UV_NO_CONFIG=1
+  fi
+
   runHook postConfigure
   echo "Finished executing pyprojectConfigurePhase"
 }
