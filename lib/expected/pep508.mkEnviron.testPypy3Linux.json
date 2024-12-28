@@ -63,11 +63,10 @@
       "post": null,
       "pre": null,
       "release": [
-        7,
         3,
-        11
+        9
       ],
-      "str": "7.3.11"
+      "str": "3.9"
     }
   },
   "python_version": {
