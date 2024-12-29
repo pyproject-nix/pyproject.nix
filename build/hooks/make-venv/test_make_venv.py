@@ -201,7 +201,6 @@ class TestMergeInputs(unittest.TestCase):
             with self.assertRaises(FileMergeError):
                 merge_inputs([Path(a.name), Path(b.name)])
 
-
     def test_skip(self):
         """Test skipping files"""
         tree: FileTree = {"hello.py": File("hello")}
@@ -232,9 +231,47 @@ class TestMergeInputs(unittest.TestCase):
             stack.enter_context(b)
 
             self.assertEqual(
-                merge_inputs([Path(a.name), Path(b.name)], skip_paths=["*.py"]),
+                merge_inputs([Path(a.name), Path(b.name)], skip_paths=["hello.py"]),
                 {
                     "hello.py": None,
+                },
+            )
+
+    def test_ignore_collisions(self):
+        """Test ignoring collisions"""
+        tree_a: FileTree = {"hello.py": File("hello")}
+        tree_b: FileTree = {"hello.py": File("goodbye")}
+
+        with contextlib.ExitStack() as stack:
+            a = TemporaryTree(tree_a)
+            stack.enter_context(a)
+
+            b = TemporaryTree(tree_b)
+            stack.enter_context(b)
+
+            self.assertEqual(
+                merge_inputs([Path(a.name), Path(b.name)], ignore_collisions=["hello.py"]),
+                {
+                    "hello.py": Path(pjoin(a.name, "hello.py")),
+                },
+            )
+
+    def test_ignore_collisions_wildcard(self):
+        """Test ignoring collisions using glob pattern"""
+        tree_a: FileTree = {"hello.py": File("hello")}
+        tree_b: FileTree = {"hello.py": File("goodbye")}
+
+        with contextlib.ExitStack() as stack:
+            a = TemporaryTree(tree_a)
+            stack.enter_context(a)
+
+            b = TemporaryTree(tree_b)
+            stack.enter_context(b)
+
+            self.assertEqual(
+                merge_inputs([Path(a.name), Path(b.name)], ignore_collisions=["*.py"]),
+                {
+                    "hello.py": Path(pjoin(a.name, "hello.py")),
                 },
             )
 
