@@ -46,7 +46,8 @@
   - [lib](./build/lib/index.md)
     - [renderers](./build/lib/renderers.md)
     - [resolvers](./build/lib/resolvers.md)
-  - [packages.hooks](./build/hooks.md)
+  - [packages](./build/packages.md)
+    - [packages.hooks](./build/hooks.md)
   - [hacks](./build/hacks.md)
   - [util](./build/util.md)
 
