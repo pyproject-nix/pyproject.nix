@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import contextlib
+import fnmatch
 import os.path
 import shutil
 import sys
@@ -21,12 +22,14 @@ class ArgsNS(argparse.Namespace):
     python: str
     deps: list[str]
     env: list[str]
+    skip: list[str]
 
     def __init__(self):
         self.out = ""
         self.python = ""
         self.deps = []
         self.env = []
+        self.skip = []
         super().__init__()
 
 
@@ -37,6 +40,7 @@ arg_parser.add_argument(
 )
 arg_parser.add_argument("--env", action="append", help="Source dependencies from environment variable")
 arg_parser.add_argument("--deps", action="append", help="Source dependencies from colon separated list")
+arg_parser.add_argument("--skip", action="append", help="Skip linking path into venv")
 
 
 class FileCollisionError(Exception):
@@ -80,7 +84,10 @@ def lstat(path: Path):
     return path.lstat()
 
 
-def merge_inputs(inputs: list[Path], skip_paths: Optional[list[str]] = None) -> MergedInputs:
+def merge_inputs(
+    inputs: list[Path],
+    skip_paths: Optional[list[str]] = None,
+) -> MergedInputs:
     """
     Merge multiple store paths
     """
@@ -88,7 +95,10 @@ def merge_inputs(inputs: list[Path], skip_paths: Optional[list[str]] = None) -> 
     skip_paths = skip_paths or []
 
     def recurse(inputs: list[Path], stack: tuple[str, ...]) -> MergedInputs:
-        if "/".join(stack) in skip_paths:
+        path_rel = "/".join(stack)
+
+        # Check for skipped path
+        if any(fnmatch.fnmatch(path_rel, pat) for pat in skip_paths):
             return None
 
         if not inputs:
@@ -277,7 +287,8 @@ def main():
 
     skip_paths = [
         # Let other hooks manage nix-support
-        "nix-support"
+        "nix-support",
+        *(args.skip or []),
     ]
 
     # Merge created venv with inputs
