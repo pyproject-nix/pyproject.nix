@@ -52,7 +52,10 @@ class FileCollisionError(Exception):
     def __init__(self, inputs: list[Path]):
         err = f"""Two or more packages are trying to provide the same file with different contents
 
-        Files: {' '.join((str(x) for x in inputs))}"""
+        Files: {' '.join((str(x) for x in inputs))}
+
+
+        See https://pyproject-nix.github.io/pyproject.nix/build/packages.html for strategies for dealing with file collisions"""
         super().__init__(err)
 
 

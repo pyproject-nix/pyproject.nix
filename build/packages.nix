@@ -57,7 +57,6 @@ let
       resolveBuildSystem = mkResolveBuildSystem pythonPkgsBuildHost;
       resolveVirtualEnv = mkResolveVirtualEnv pkgsFinal;
 
-      # Make a virtual env from resolved dependencies
       mkVirtualEnv =
         name: spec:
         pkgsFinal.stdenv.mkDerivation (finalAttrs: {
@@ -114,7 +113,52 @@ in
 }:
 makeScope newScope (
   final:
-  (mkPythonSet {
+  {
+    # Create a dummy mkVirtualEnv function to make nixdoc happy
+
+    /*
+      Create a virtual environment from dependency specification
+
+      ### Example
+
+      ```nix
+      mkVirtualEnv "foo-env" {
+        foo = [ "extra" ];
+      }
+      ```
+
+      ### Example (skip file)
+
+      ```nix
+      (mkVirtualEnv "foo-env" {
+        foo = [ "extra" ];
+      }).overrideAttrs(old: {
+        # Skip LICENSE file from package root.
+        venvSkip = [ "LICENSE" ];
+      })
+      ```
+
+      ### Example (ignore collisions)
+
+      ```nix
+      (mkVirtualEnv "foo-env" {
+        foo = [ "extra" ];
+      }).overrideAttrs(old: {
+        # You could also ignore all collisions with:
+        # venvIgnoreCollisions = [ "*" ];
+        venvIgnoreCollisions = [ "lib/python${python.pythonVersion}/site-packages/build_tools" ];
+      })
+      ```
+    */
+    mkVirtualEnv =
+      # Venv name
+      name:
+      # Dependency specification
+      spec:
+      # Note: Funky throw construct is to satisfy deadnix not to get name -> _name formatting.
+      throw "${name} ${spec}";
+  }
+  // (mkPythonSet {
     inherit python stdenv;
     pkgsFinal = final;
     pythonPkgsBuildHost = final.pythonPkgsHostHost;
