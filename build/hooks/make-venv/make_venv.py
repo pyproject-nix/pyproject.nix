@@ -7,10 +7,10 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 from stat import S_ISDIR, S_ISLNK, S_ISREG
-from typing import Union
+from typing import Optional, Union
 from venv import EnvBuilder
 
-MergedInputs = Union[Path, dict[str, "MergedInputs"]]
+MergedInputs = Union[Path, None, dict[str, "MergedInputs"]]
 
 
 EXECUTABLE = os.path.basename(sys.executable)
@@ -80,64 +80,70 @@ def lstat(path: Path):
     return path.lstat()
 
 
-def merge_inputs(inputs: list[Path]) -> MergedInputs:
+def merge_inputs(inputs: list[Path], skip_paths: Optional[list[str]] = None) -> MergedInputs:
     """
     Merge multiple store paths
     """
-    # Let other hooks manage nix-support
-    inputs = [input for input in inputs if input.name != "nix-support"]
 
-    if not inputs:
-        return {}
+    skip_paths = skip_paths or []
 
-    if len(inputs) == 1:
-        return inputs[0]
+    def recurse(inputs: list[Path], stack: tuple[str, ...]) -> MergedInputs:
+        if "/".join(stack) in skip_paths:
+            return None
 
-    if any(S_ISDIR(lstat(input).st_mode) for input in inputs):  # Directories
-        entries: dict[str, list[Path]] = {}
+        if not inputs:
+            return {}
 
-        for input in inputs:
-            for child in input.iterdir():
-                entries.setdefault(child.name, []).append(child)
-
-        return {k: merge_inputs(v) for k, v in entries.items()}
-
-    elif any(S_ISREG(lstat(input).st_mode) for input in inputs):  # Regular files
-        if not is_bytecode(inputs[0]) and not compare_paths(inputs):
-            raise FileCollisionError(inputs)
-
-        # Return the first regular file from input list.
-        for input in inputs:
-            if S_ISREG(lstat(input).st_mode):
-                return input
-
-    elif all(S_ISLNK(lstat(input).st_mode) for input in inputs):  # All symlinks
-        # If every symlink resolves to the same path use it as the source
-        fst = inputs[0].readlink()
-        if all(input.readlink() == fst for input in inputs[1:]):
+        if len(inputs) == 1:
             return inputs[0]
 
-        # Otherwise check if any of the paths resolve and try again.
-        for i, input in enumerate(inputs):
-            resolved = input.resolve()
+        if any(S_ISDIR(lstat(input).st_mode) for input in inputs):  # Directories
+            entries: dict[str, list[Path]] = {}
 
-            # If anything resolves to a directory use the resolved path and try again
-            if resolved.is_dir():
-                new_inputs = inputs.copy()
-                new_inputs[i] = resolved
-                return merge_inputs(new_inputs)
+            for input in inputs:
+                for child in input.iterdir():
+                    entries.setdefault(child.name, []).append(child)
 
-            # If any file is a regular file treat the rest as such
-            elif resolved.is_file():
-                if not is_bytecode(input) and not compare_paths(inputs):
-                    raise FileCollisionError(inputs)
-                return input
+            return {k: recurse(v, stack=(*stack, k)) for k, v in entries.items()}
 
-        raise FileMergeError(
-            f"Input symlinks '{inputs}' do not resolve and symlink resolution is ambiguous. Unable to merge."
-        )
+        elif any(S_ISREG(lstat(input).st_mode) for input in inputs):  # Regular files
+            if not is_bytecode(inputs[0]) and not compare_paths(inputs):
+                raise FileCollisionError(inputs)
 
-    raise FileMergeError(f"Unsupported input file types for inputs '{inputs}'")  # This should never ever happen
+            # Return the first regular file from input list.
+            for input in inputs:
+                if S_ISREG(lstat(input).st_mode):
+                    return input
+
+        elif all(S_ISLNK(lstat(input).st_mode) for input in inputs):  # All symlinks
+            # If every symlink resolves to the same path use it as the source
+            fst = inputs[0].readlink()
+            if all(input.readlink() == fst for input in inputs[1:]):
+                return inputs[0]
+
+            # Otherwise check if any of the paths resolve and try again.
+            for i, input in enumerate(inputs):
+                resolved = input.resolve()
+
+                # If anything resolves to a directory use the resolved path and try again
+                if resolved.is_dir():
+                    new_inputs = inputs.copy()
+                    new_inputs[i] = resolved
+                    return recurse(new_inputs, stack)
+
+                # If any file is a regular file treat the rest as such
+                elif resolved.is_file():
+                    if not is_bytecode(input) and not compare_paths(inputs):
+                        raise FileCollisionError(inputs)
+                    return input
+
+            raise FileMergeError(
+                f"Input symlinks '{inputs}' do not resolve and symlink resolution is ambiguous. Unable to merge."
+            )
+
+        raise FileMergeError(f"Unsupported input file types for inputs '{inputs}'")  # This should never ever happen
+
+    return recurse(inputs, ())
 
 
 def write_regular(src: Path, dst: Path):
@@ -185,6 +191,9 @@ def write_venv_deps(
     out_bin = out_root.joinpath("bin")
 
     def recurse(root: Path, inputs: MergedInputs):
+        if inputs is None:
+            return
+
         if isinstance(inputs, Path):
             dst = root
             src = inputs
@@ -266,8 +275,13 @@ def main():
     builder.create_configuration(context)
     fixup_pyvenv(python_root, out_root)
 
+    skip_paths = [
+        # Let other hooks manage nix-support
+        "nix-support"
+    ]
+
     # Merge created venv with inputs
-    merged = merge_inputs([out_root, *dependencies])
+    merged = merge_inputs([out_root, *dependencies], skip_paths)
 
     # Write merged dependencies to venv
     write_venv_deps(python_bin, out_root, merged)
