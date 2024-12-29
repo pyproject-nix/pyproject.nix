@@ -202,5 +202,42 @@ class TestMergeInputs(unittest.TestCase):
                 merge_inputs([Path(a.name), Path(b.name)])
 
 
+    def test_skip(self):
+        """Test skipping files"""
+        tree: FileTree = {"hello.py": File("hello")}
+
+        with contextlib.ExitStack() as stack:
+            a = TemporaryTree(tree)
+            stack.enter_context(a)
+
+            b = TemporaryTree(tree)
+            stack.enter_context(b)
+
+            self.assertEqual(
+                merge_inputs([Path(a.name), Path(b.name)], skip_paths=["hello.py"]),
+                {
+                    "hello.py": None,
+                },
+            )
+
+    def test_skip_wildcard(self):
+        """Test skipping files"""
+        tree: FileTree = {"hello.py": File("hello")}
+
+        with contextlib.ExitStack() as stack:
+            a = TemporaryTree(tree)
+            stack.enter_context(a)
+
+            b = TemporaryTree(tree)
+            stack.enter_context(b)
+
+            self.assertEqual(
+                merge_inputs([Path(a.name), Path(b.name)], skip_paths=["*.py"]),
+                {
+                    "hello.py": None,
+                },
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

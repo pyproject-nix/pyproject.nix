@@ -5,7 +5,7 @@
 }:
 let
   inherit (resolvers) resolveCyclic resolveNonCyclic;
-  inherit (lib) makeScope;
+  inherit (lib) makeScope concatStringsSep;
 
   mkPkgs' = import ./pkgs { inherit pyproject-nix lib; };
 
@@ -60,22 +60,28 @@ let
       # Make a virtual env from resolved dependencies
       mkVirtualEnv =
         name: spec:
-        pkgsFinal.stdenv.mkDerivation {
+        pkgsFinal.stdenv.mkDerivation (finalAttrs: {
           inherit name;
 
           dontConfigure = true;
           dontUnpack = true;
           dontBuild = true;
 
+          # Skip linking files into venv
+          venvSkip = [ ];
+
           nativeBuildInputs = [
             pkgsFinal.pyprojectMakeVenvHook
           ];
 
-          env.NIX_PYPROJECT_DEPS = lib.concatStringsSep ":" (pkgsFinal.resolveVirtualEnv spec);
-          env.dontMoveLib64 = true;
+          env = {
+            NIX_PYPROJECT_DEPS = concatStringsSep ":" (pkgsFinal.resolveVirtualEnv spec);
+            dontMoveLib64 = true;
+            mkVirtualenvFlags = concatStringsSep " " (map (path: "--skip '${path}'") finalAttrs.venvSkip);
+          };
 
           buildInputs = pkgsFinal.resolveVirtualEnv spec;
-        };
+        });
 
       hooks = pkgsFinal.callPackage ./hooks { };
       inherit (pkgsFinal.hooks)
