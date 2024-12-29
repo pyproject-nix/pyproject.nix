@@ -23,6 +23,7 @@ class ArgsNS(argparse.Namespace):
     deps: list[str]
     env: list[str]
     skip: list[str]
+    ignore_collisions: list[str]
 
     def __init__(self):
         self.out = ""
@@ -30,6 +31,7 @@ class ArgsNS(argparse.Namespace):
         self.deps = []
         self.env = []
         self.skip = []
+        self.ignore_collisions = []
         super().__init__()
 
 
@@ -41,6 +43,9 @@ arg_parser.add_argument(
 arg_parser.add_argument("--env", action="append", help="Source dependencies from environment variable")
 arg_parser.add_argument("--deps", action="append", help="Source dependencies from colon separated list")
 arg_parser.add_argument("--skip", action="append", help="Skip linking path into venv")
+arg_parser.add_argument(
+    "--ignore-collisions", action="append", help="Ignore collisions for path, link the first path encountered"
+)
 
 
 class FileCollisionError(Exception):
@@ -87,12 +92,14 @@ def lstat(path: Path):
 def merge_inputs(
     inputs: list[Path],
     skip_paths: Optional[list[str]] = None,
+    ignore_collisions: Optional[list[str]] = None,
 ) -> MergedInputs:
     """
     Merge multiple store paths
     """
 
     skip_paths = skip_paths or []
+    ignore_collisions = ignore_collisions or []
 
     def recurse(inputs: list[Path], stack: tuple[str, ...]) -> MergedInputs:
         path_rel = "/".join(stack)
@@ -117,7 +124,11 @@ def merge_inputs(
             return {k: recurse(v, stack=(*stack, k)) for k, v in entries.items()}
 
         elif any(S_ISREG(lstat(input).st_mode) for input in inputs):  # Regular files
-            if not is_bytecode(inputs[0]) and not compare_paths(inputs):
+            if (
+                not is_bytecode(inputs[0])
+                and not compare_paths(inputs)
+                and not any(fnmatch.fnmatch(path_rel, pat) for pat in ignore_collisions)
+            ):
                 raise FileCollisionError(inputs)
 
             # Return the first regular file from input list.
@@ -143,7 +154,11 @@ def merge_inputs(
 
                 # If any file is a regular file treat the rest as such
                 elif resolved.is_file():
-                    if not is_bytecode(input) and not compare_paths(inputs):
+                    if (
+                        not is_bytecode(input)
+                        and not compare_paths(inputs)
+                        and not any(fnmatch.fnmatch(path_rel, pat) for pat in ignore_collisions)
+                    ):
                         raise FileCollisionError(inputs)
                     return input
 
@@ -291,8 +306,10 @@ def main():
         *(args.skip or []),
     ]
 
+    ignore_collisions = args.ignore_collisions or []
+
     # Merge created venv with inputs
-    merged = merge_inputs([out_root, *dependencies], skip_paths)
+    merged = merge_inputs([out_root, *dependencies], skip_paths, ignore_collisions)
 
     # Write merged dependencies to venv
     write_venv_deps(python_bin, out_root, merged)

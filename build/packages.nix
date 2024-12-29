@@ -5,7 +5,7 @@
 }:
 let
   inherit (resolvers) resolveCyclic resolveNonCyclic;
-  inherit (lib) makeScope concatStringsSep;
+  inherit (lib) makeScope concatStringsSep escapeShellArg;
 
   mkPkgs' = import ./pkgs { inherit pyproject-nix lib; };
 
@@ -70,6 +70,9 @@ let
           # Skip linking files into venv
           venvSkip = [ ];
 
+          # Ignore collisions for paths
+          venvIgnoreCollisions = [ ];
+
           nativeBuildInputs = [
             pkgsFinal.pyprojectMakeVenvHook
           ];
@@ -77,7 +80,10 @@ let
           env = {
             NIX_PYPROJECT_DEPS = concatStringsSep ":" (pkgsFinal.resolveVirtualEnv spec);
             dontMoveLib64 = true;
-            mkVirtualenvFlags = concatStringsSep " " (map (path: "--skip '${path}'") finalAttrs.venvSkip);
+            mkVirtualenvFlags = concatStringsSep " " (
+              map (path: "--skip ${escapeShellArg path}") finalAttrs.venvSkip
+              ++ map (pat: "--ignore-collisions ${escapeShellArg pat}") finalAttrs.venvIgnoreCollisions
+            );
           };
 
           buildInputs = pkgsFinal.resolveVirtualEnv spec;
