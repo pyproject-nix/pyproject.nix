@@ -1,24 +1,15 @@
 {
   lib,
   resolvers,
-  pyproject-nix,
 }:
 let
   inherit (resolvers) resolveCyclic resolveNonCyclic;
   inherit (lib) makeScope concatStringsSep escapeShellArg;
 
-  mkPkgs' = import ./pkgs { inherit pyproject-nix lib; };
-
-  # Build-system package names to memoise
-  memoNames = lib.attrNames (mkPkgs' {
-    # Hack: We only need attrNames
-    callPackage = null;
-  });
-
   mkResolveBuildSystem =
     set:
     let
-      resolveNonCyclic' = resolveNonCyclic memoNames set;
+      resolveNonCyclic' = resolveNonCyclic [ ] set;
 
       # Implement fallback behaviour in case of empty build-system
       fallbackSystems = map (name: set.${name}) (resolveNonCyclic' {
@@ -30,24 +21,11 @@ let
 
   mkResolveVirtualEnv = set: spec: map (name: set.${name}) (resolveCyclic set spec);
 
-  deprecatedBuild = name: ''
-    You are using '${name}' from the pyproject.nix base package set, which is deprecated and will be removed shortly.
-
-    Build-system packages have been moved into their own repository which can be found at
-    https://github.com/pyproject-nix/build-system-pkgs
-  '';
-  pkgsFun =
-    final:
-    lib.mapAttrs (name: drv: builtins.trace (deprecatedBuild name) drv) (mkPkgs' {
-      inherit (final) callPackage;
-    });
-
   mkPythonSet =
     {
       python,
       stdenv,
       pythonPkgsBuildHost,
-      pythonPkgsFun,
       pkgsFinal,
     }:
     {
@@ -100,8 +78,7 @@ let
         pyprojectHook
         pyprojectWheelHook
         ;
-    }
-    // pythonPkgsFun pkgsFinal;
+    };
 
 in
 
@@ -162,7 +139,6 @@ makeScope newScope (
     inherit python stdenv;
     pkgsFinal = final;
     pythonPkgsBuildHost = final.pythonPkgsHostHost;
-    pythonPkgsFun = pkgsFun;
   })
   // {
     # Python packages for the build host.
@@ -176,7 +152,6 @@ makeScope newScope (
             inherit (buildPackages) stdenv;
             python = python.pythonOnBuildForHost;
             inherit (final) pythonPkgsBuildHost;
-            pythonPkgsFun = pkgsFun;
             inherit pkgsFinal;
           }
         ))

@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-  "zipp"
+  "flit-core"
 ]
 
 [project.optional-dependencies]
