@@ -152,6 +152,9 @@ in
               inherit (project') entry-points;
             };
 
+          # Allow direct references in dependencies and other metadata
+          tool.hatch.metadata.allow-direct-references = true;
+
           # Allow empty package
           tool.hatch.build.targets.wheel.bypass-selection = true;
 
