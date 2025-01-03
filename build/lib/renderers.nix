@@ -133,8 +133,10 @@ in
           # PEP-621 project table
           project =
             {
-              # Both name and version are required.
-              inherit (project') name version;
+              inherit (project') name;
+            }
+            // optionalAttrs (project' ? version) {
+              inherit (project') version;
             }
             // optionalAttrs (project' ? dependencies) {
               inherit (project') dependencies;
