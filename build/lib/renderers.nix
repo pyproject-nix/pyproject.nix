@@ -100,6 +100,8 @@ in
         else
           project.projectRoot
       ),
+      # Synthetic pyproject.toml project table overrides
+      projectOverrides ? { },
     }:
     assert isString root;
     assert assertMsg (!hasPrefix storeDir root) ''
@@ -152,7 +154,8 @@ in
             }
             // optionalAttrs (project' ? entry-points) {
               inherit (project') entry-points;
-            };
+            }
+            // projectOverrides;
 
           # Allow direct references in dependencies and other metadata
           tool.hatch.metadata.allow-direct-references = true;
