@@ -353,7 +353,7 @@ in
     };
   };
 
-  parseVersionConds = {
+  parseVersionConds = rec {
     testSimple = {
       expr = parseVersionConds ">=3.0.0rc1,<=4.0";
       expected = [
@@ -392,6 +392,11 @@ in
           };
         }
       ];
+    };
+
+    testParen = {
+      expr = parseVersionConds "(>=3.0.0rc1,<=4.0)";
+      inherit (testSimple) expected;
     };
   };
 
