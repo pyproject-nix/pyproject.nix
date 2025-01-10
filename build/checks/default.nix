@@ -62,6 +62,21 @@ let
             touch $out
           '';
 
+      # Test that glob isn't treated strangely by bash and command doesn't explode
+      make-venv-flags =
+        pkgs.runCommand "venv-run-build-flags-test"
+          {
+            nativeBuildInputs = [
+              (testVenv.overrideAttrs (_old: {
+                venvIgnoreCollisions = [ "*" ];
+              }))
+            ];
+          }
+          ''
+            pyproject-build --help > /dev/null
+            touch $out
+          '';
+
       make-venv-unittest =
         pkgs.runCommand "venv-unittest"
           {

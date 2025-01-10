@@ -4,7 +4,7 @@
 }:
 let
   inherit (resolvers) resolveCyclic resolveNonCyclic;
-  inherit (lib) makeScope concatStringsSep escapeShellArg;
+  inherit (lib) makeScope concatStringsSep;
 
   mkResolveBuildSystem =
     set:
@@ -58,8 +58,8 @@ let
             NIX_PYPROJECT_DEPS = concatStringsSep ":" (pkgsFinal.resolveVirtualEnv spec);
             dontMoveLib64 = true;
             mkVirtualenvFlags = concatStringsSep " " (
-              map (path: "--skip ${escapeShellArg path}") finalAttrs.venvSkip
-              ++ map (pat: "--ignore-collisions ${escapeShellArg pat}") finalAttrs.venvIgnoreCollisions
+              map (path: "--skip ${path}") finalAttrs.venvSkip
+              ++ map (pat: "--ignore-collisions ${pat}") finalAttrs.venvIgnoreCollisions
             );
           };
 
