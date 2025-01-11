@@ -53,7 +53,7 @@ fix (self: {
     fix (scriptSelf: {
       name = normalizePackageName name;
       script = script';
-      metadata = pep723.parseScript script';
+      metadata = parseScript script';
       renderWithPackages =
         {
           # Python interpreter

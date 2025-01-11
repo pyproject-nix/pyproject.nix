@@ -111,6 +111,7 @@ in
       {
         requires-python = pep440.parseVersionConds (metadata.requires-python or "");
         dependencies = map pep508.parseString (metadata.dependencies or [ ]);
+        inherit metadata;
       }
     else
       default;

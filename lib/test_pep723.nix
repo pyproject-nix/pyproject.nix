@@ -29,6 +29,13 @@ in
         print("Hello world")
       '';
       expected = {
+        metadata = {
+          dependencies = [
+            "requests<3"
+            "rich"
+          ];
+          requires-python = ">=3.11";
+        };
         requires-python = requiresPython;
         dependencies = [
           requests
@@ -54,6 +61,13 @@ in
           requests
           rich
         ];
+        metadata = {
+          dependencies = [
+            "requests<3"
+            "rich"
+          ];
+          requires-python = ">=3.11";
+        };
       };
     };
 
@@ -77,6 +91,9 @@ in
         # ///
       '';
       expected = {
+        metadata = {
+          dependencies = [ "rich" ];
+        };
         requires-python = [ ];
         dependencies = [ rich ];
       };
@@ -89,8 +106,31 @@ in
         # ///
       '';
       expected = {
+        metadata = {
+          requires-python = ">=3.11";
+        };
         requires-python = requiresPython;
         dependencies = [ ];
+      };
+    };
+
+    testTool = {
+      expr = pep723.parseScript ''
+        # /// script
+        # [tool.uv]
+        # no-binary = true
+        # ///
+      '';
+      expected = {
+        requires-python = [ ];
+        dependencies = [ ];
+        metadata = {
+          tool = {
+            uv = {
+              no-binary = true;
+            };
+          };
+        };
       };
     };
 
@@ -108,6 +148,13 @@ in
         # ///
       '';
       expected = {
+        metadata = {
+          dependencies = [
+            "requests<3"
+            "rich"
+          ];
+          requires-python = ">=3.11";
+        };
         requires-python = requiresPython;
         dependencies = [
           requests
@@ -134,6 +181,13 @@ in
           requests
           rich
         ];
+        metadata = {
+          dependencies = [
+            "requests<3"
+            "rich"
+          ];
+          requires-python = ">=3.11";
+        };
       };
     };
   };
