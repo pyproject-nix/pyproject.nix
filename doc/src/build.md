@@ -4,7 +4,7 @@
 The pyproject.nix build infrastructure is mainly targeted at python2nix authors, and is being used in uv2nix.
 </div>
 
-Pyproject.nix can be used with nixpkgs `buildPythonPackage`/`packageOverrides`/`withPackages`, but also implements it's own build infrastructure that fixes many structural problems with the nixpkgs implementation.
+Pyproject.nix can be used with nixpkgs `buildPythonPackage`/`packageOverrides`/`withPackages`, but also implements its own build infrastructure that fixes many structural problems with the nixpkgs implementation.
 
 ## Problems with nixpkgs Python builders
 

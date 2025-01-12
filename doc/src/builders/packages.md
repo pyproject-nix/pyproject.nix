@@ -13,8 +13,8 @@ pkgs.callPackage pyproject-nix.build.packages {
 
 ## Build-system packages
 
-For package managers that lack the ability so solve build-system dependencies `pyproject.nix` maintains a [base package set](https://github.com/pyproject-nix/build-system-pkgs).
-This set is much smaller and more narrow in scope than nixpkgs, it's purpose is only to package [build-system](https://peps.python.org/pep-0518/) dependencies, which are missing from Python package manager lock files, so needs to be supplemented from elsewhere.
+For package managers that lack the ability to solve build-system dependencies `pyproject.nix` maintains a [base package set](https://github.com/pyproject-nix/build-system-pkgs).
+This set is much smaller and more narrow in scope than nixpkgs, its purpose is only to package [build-system](https://peps.python.org/pep-0518/) dependencies, which are missing from Python package manager lock files, so needs to be supplemented from elsewhere.
 
 ## Overriding scope
 
