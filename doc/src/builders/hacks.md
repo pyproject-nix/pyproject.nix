@@ -47,7 +47,7 @@ hacks.nixpkgsPrebuilt {
 
 ## Building Cargo (Rust) packages from source
 
-Rust has it's own package manager, Cargo, that expects to be able to download dependencies at build-time.
+Rust has its own package manager, Cargo, that expects to be able to download dependencies at build-time.
 One way to deal with that is to use [rustPlatform.importCargoLock](https://nixos.org/manual/nixpkgs/stable/#vendoring-of-dependencies).
 
 This mechanism uses IFD (import-from-derivation) on non-local packages.

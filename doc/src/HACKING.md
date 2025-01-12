@@ -1,6 +1,6 @@
 # Hacking
 
-This document outlines hacking on `pyproject.nix` itself, and lays out it's project structure.
+This document outlines hacking on `pyproject.nix` itself, and lays out its project structure.
 
 ## Getting started
 

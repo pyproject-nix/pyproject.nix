@@ -57,7 +57,7 @@ This patches RPATH's of wheels with native libraries, but those must be present 
 
 - [PEP-517](https://peps.python.org/pep-0517/) build systems
 
-Uv, like most Python package managers, installs binary wheels by default, and it's solver doesn't take into account bootstrapping dependencies.
+Uv, like most Python package managers, installs binary wheels by default, and its solver doesn't take into account bootstrapping dependencies.
 When building from an sdist instead of a wheel build systems will need to be added.
 
 ## Fixups
