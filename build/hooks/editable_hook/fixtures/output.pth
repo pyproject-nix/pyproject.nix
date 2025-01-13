@@ -1,0 +1,5 @@
+# Bare path added to sys.path
+import sys; import os.path; sys.path.append(os.path.expandvars(("$REPO_ROOT/build/cp312"))
+
+# Handled by the Python rewriter
+import foo; foo((__import__("os").path.expandvars(r"$REPO_ROOT/build/cp312")))

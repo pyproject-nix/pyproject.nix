@@ -156,25 +156,21 @@ let
             final: _prev: {
               myapp = final.callPackage (
                 {
-                  python,
                   stdenv,
-                  pyprojectHook,
+                  pyprojectEditableHook,
                   resolveBuildSystem,
-                  pythonPkgsBuildHost,
                 }:
                 stdenv.mkDerivation (
                   renderers.mkDerivationEditable
                     {
                       project = myapp;
                       environ = testEnviron;
-                      root = "$NIX_BUILD_TOP/src";
+                      root = "$NIX_BUILD_TOP";
                     }
                     {
                       inherit
-                        python
-                        pyprojectHook
+                        pyprojectEditableHook
                         resolveBuildSystem
-                        pythonPkgsBuildHost
                         ;
                     }
                 )

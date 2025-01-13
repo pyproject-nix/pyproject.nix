@@ -77,6 +77,9 @@ let
         pyprojectMakeVenvHook
         pyprojectHook
         pyprojectWheelHook
+        pyprojectBuildEditableHook
+        pyprojectFixupEditableHook
+        pyprojectEditableHook
         ;
     };
 

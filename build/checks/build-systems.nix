@@ -198,6 +198,30 @@ let
             };
         };
 
+      editables =
+        {
+          stdenv,
+          python3Packages,
+          pyprojectHook,
+          resolveBuildSystem,
+        }:
+        stdenv.mkDerivation {
+          inherit (python3Packages.editables)
+            pname
+            version
+            src
+            meta
+            ;
+
+          nativeBuildInputs =
+            [
+              pyprojectHook
+            ]
+            ++ resolveBuildSystem {
+              flit-core = [ ];
+            };
+        };
+
       hatchling =
         {
           stdenv,
@@ -221,6 +245,7 @@ let
               pathspec = [ ];
               pluggy = [ ];
               trove-classifiers = [ ];
+              editables = [ ];
             }
             // lib.optionalAttrs (python.pythonOlder "3.11") {
               tomli = [ ];
@@ -602,6 +627,65 @@ let
             ]
             ++ resolveBuildSystem {
               flit-core = [ ];
+            };
+        };
+
+      libcst =
+        {
+          stdenv,
+          python3Packages,
+          pyprojectHook,
+          resolveBuildSystem,
+          rustPlatform,
+          cargo,
+          rustc,
+        }:
+        stdenv.mkDerivation {
+          inherit (python3Packages.libcst)
+            name
+            pname
+            src
+            version
+            cargoDeps
+            cargoRoot
+            ;
+          passthru.dependencies = {
+            pyyaml = [ ];
+          };
+          nativeBuildInputs =
+            [
+              pyprojectHook
+              rustPlatform.cargoSetupHook
+              cargo
+              rustc
+            ]
+            ++ resolveBuildSystem {
+              setuptools = [ ];
+              setuptools-rust = [ ];
+            };
+        };
+
+      pyyaml =
+        {
+          stdenv,
+          python3Packages,
+          pyprojectHook,
+          resolveBuildSystem,
+        }:
+        stdenv.mkDerivation {
+          inherit (python3Packages.pyyaml)
+            pname
+            version
+            src
+            meta
+            ;
+
+          nativeBuildInputs =
+            [
+              pyprojectHook
+            ]
+            ++ resolveBuildSystem {
+              setuptools = [ ];
             };
         };
     };
