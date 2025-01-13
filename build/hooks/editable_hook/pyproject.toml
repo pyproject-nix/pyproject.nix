@@ -1,0 +1,19 @@
+[project]
+name = "editable-hook"
+version = "0.1.0"
+description = "Build & patch editable packages with Nix"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "libcst",
+  "pyproject-hooks",
+  "tomli; python_version < \"3.11\"",
+]
+
+[project.scripts]
+build-editable = "build_editable:main"
+patch-editable = "patch_editable:main"
+
+[build-system]
+requires = ["flit-core"]
+build-backend = "flit_core.buildapi"

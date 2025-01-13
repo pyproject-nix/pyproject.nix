@@ -34,6 +34,9 @@ let
     else
       pythonOnBuildForHost.interpreter;
 
+  # Builder commands for editable packages
+  editableHook' = callPackage ./editable_hook { };
+
 in
 {
   /*
@@ -178,17 +181,21 @@ in
           pyprojectOutputSetupHook,
           pyprojectCrossShebangHook,
           python,
+          extraHooks ? [ ],
         }:
         makeSetupHook {
           name = "pyproject-hook";
           passthru.python = python;
-          propagatedBuildInputs = [
-            python
-            pyprojectConfigureHook
-            pyprojectBuildHook
-            pyprojectInstallHook
-            pyprojectOutputSetupHook
-          ] ++ lib.optional (stdenv.buildPlatform != stdenv.hostPlatform) pyprojectCrossShebangHook;
+          propagatedBuildInputs =
+            [
+              python
+              pyprojectConfigureHook
+              pyprojectBuildHook
+              pyprojectInstallHook
+              pyprojectOutputSetupHook
+            ]
+            ++ lib.optional (stdenv.buildPlatform != stdenv.hostPlatform) pyprojectCrossShebangHook
+            ++ extraHooks;
         } ./meta-hook.sh
       )
       {
@@ -203,4 +210,44 @@ in
   pyprojectWheelHook = hooks.pyprojectHook.override {
     pyprojectBuildHook = hooks.pyprojectWheelDistHook;
   };
+
+  /*
+    Hook used to build editable packages.
+
+    Use instead of pyprojectHook.
+  */
+  pyprojectEditableHook = hooks.pyprojectHook.override {
+    pyprojectBuildHook = hooks.pyprojectBuildEditableHook;
+    extraHooks = [
+      hooks.pyprojectFixupEditableHook
+    ];
+  };
+
+  /*
+    Build an editable package
+    .
+  */
+  pyprojectBuildEditableHook = callPackage (
+    { python }:
+    makeSetupHook {
+      name = "pyproject-editable-hook";
+      substitutions = {
+        editableHook = editableHook';
+      };
+    } ./pyproject-build-editable-hook.sh
+  ) { };
+
+  /*
+    Fixup path references in an editable package
+    .
+  */
+  pyprojectFixupEditableHook = callPackage (
+    { python }:
+    makeSetupHook {
+      name = "pyproject-fixup-editable-hook";
+      substitutions = {
+        editableHook = editableHook';
+      };
+    } ./pyproject-fixup-editable-hook.sh
+  ) { };
 }

@@ -39,6 +39,9 @@ let
               "check"
               "--fix"
             ];
+            excludes = [
+              "build/hooks/editable_hook/fixtures/**"
+            ];
           };
 
           ruff-format = {
@@ -46,6 +49,9 @@ let
             includes = [
               "*.py"
               "*.pyi"
+            ];
+            excludes = [
+              "build/hooks/editable_hook/fixtures/**"
             ];
             options = [ "format" ];
           };

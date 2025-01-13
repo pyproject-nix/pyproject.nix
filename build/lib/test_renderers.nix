@@ -60,6 +60,7 @@ in
           nativeBuildInputs = [
             null
             "hatchling"
+            "editables"
             "packaging"
             "pathspec"
             "pluggy"

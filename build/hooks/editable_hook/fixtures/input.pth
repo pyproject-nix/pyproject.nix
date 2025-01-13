@@ -1,0 +1,5 @@
+# Bare path added to sys.path
+/build_dir/build/cp312
+
+# Handled by the Python rewriter
+import foo; foo(r"/build_dir/build/cp312")
