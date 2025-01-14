@@ -7,7 +7,7 @@ pyprojectWheelDist() {
 
   echo "Creating dist..."
   mkdir -p dist
-  ln -s "$src" "dist/$(stripHash "$src")"
+  cp "$src" "dist/$(stripHash "$src")"
 
   runHook postBuild
   echo "Finished executing pyprojectWheelDist"
