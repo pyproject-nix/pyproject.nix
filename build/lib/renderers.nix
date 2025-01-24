@@ -100,7 +100,7 @@ in
       Pass editable root either as a string pointing to an absolute path non-store path, or use environment variables for relative paths.
     '';
     let
-      inherit (project) pyproject;
+      project' = project.pyproject.project or { };
 
       filteredDeps = pep621.filterDependenciesByEnviron environ extras project.dependencies;
       depSpec = mkSpec filteredDeps.dependencies;
@@ -128,10 +128,10 @@ in
         inherit project;
       };
     }
-    // optionalAttrs (pyproject.project ? name) { pname = pyproject.project.name; }
-    // optionalAttrs (pyproject.project ? version) { inherit (pyproject.project) version; }
-    // optionalAttrs (!pyproject.project ? version && pyproject.project ? name) {
-      inherit (pyproject.project) name;
+    // optionalAttrs (project' ? name) { pname = project'.name; }
+    // optionalAttrs (project' ? version) { inherit (project') version; }
+    // optionalAttrs (!project' ? version && project' ? name) {
+      inherit (project') name;
     }
     // optionalAttrs (project.projectRoot != null) { src = project.projectRoot; };
 
