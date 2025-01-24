@@ -41,9 +41,8 @@ in
       extras ? [ ],
     }:
     let
-      inherit (project) pyproject;
-
       filteredDeps = pep621.filterDependenciesByEnviron environ extras project.dependencies;
+      project' = project.pyproject.project or { };
 
     in
     { pyprojectHook, resolveBuildSystem }:
@@ -62,22 +61,22 @@ in
         inherit project;
       };
     }
-    // optionalAttrs (pyproject.project ? name) { pname = pyproject.project.name; }
-    // optionalAttrs (pyproject.project ? version) { inherit (pyproject.project) version; }
-    // optionalAttrs (!pyproject.project ? version && pyproject.project ? name) {
-      inherit (pyproject.project) name;
+    // optionalAttrs (project' ? name) { pname = project'.name; }
+    // optionalAttrs (project' ? version) { inherit (project') version; }
+    // optionalAttrs (!project' ? version && project' ? name) {
+      inherit (project') name;
     }
-    // optionalAttrs (project.projectRoot != null) { src = project.projectRoot; };
+    // optionalAttrs ((project.projectRoot or null) != null) { src = project.projectRoot; };
 
- /*
-   Renders a project as an argument that can be passed to stdenv.mkDerivation.
+  /*
+    Renders a project as an argument that can be passed to stdenv.mkDerivation.
 
-   Evaluates PEP-508 environment markers to select correct dependencies for the platform but does not validate version constraints.
+    Evaluates PEP-508 environment markers to select correct dependencies for the platform but does not validate version constraints.
 
-   Note: This API is unstable and subject to change.
+    Note: This API is unstable and subject to change.
 
-   Type: mkDerivation :: AttrSet -> AttrSet
- */
+    Type: mkDerivation :: AttrSet -> AttrSet
+  */
   mkDerivationEditable =
     {
       # Loaded pyproject.nix project

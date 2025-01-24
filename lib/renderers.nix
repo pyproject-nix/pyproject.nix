@@ -17,7 +17,6 @@ let
   inherit (lib)
     optionalAttrs
     mapAttrs'
-    mapAttrs
     filterAttrs
     concatMap
     nameValuePair
@@ -272,7 +271,7 @@ in
   meta =
     { project }:
     let
-      project' = project.pyproject.project;
+      project' = project.pyproject.project or { };
       urls = project'.urls or { };
     in
     # Optional changelog
