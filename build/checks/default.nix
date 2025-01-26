@@ -87,6 +87,24 @@ let
             touch $out
           '';
 
+      symlinked-venv =
+        let
+          # Create a derivation with a symlink to interpreter.
+          # This would break the vanilla venv module.
+          sym = pkgs.runCommand "symlinked-venv" { } ''
+            mkdir -p $out/bin
+            ln -s ${testVenv}/bin/python $out/bin/python
+          '';
+        in
+        pkgs.runCommand "symlinked-venv-test"
+          {
+            nativeBuildInputs = [ sym ];
+          }
+          ''
+            python -c 'import packaging'
+            touch $out
+          '';
+
       prebuilt-wheel = pythonSet.pythonPkgsHostHost.callPackage (
         {
           stdenv,

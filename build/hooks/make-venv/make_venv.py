@@ -4,6 +4,7 @@ import contextlib
 import fnmatch
 import os.path
 import shutil
+import subprocess
 import sys
 from functools import lru_cache
 from pathlib import Path
@@ -262,6 +263,48 @@ def fixup_pyvenv(python_root: Path, out_root: Path) -> None:
         pyvenv_f.write(pyvenv)
 
 
+def wrap_python_bin(bin: Path, target: Path):
+    # Replace symlinks to Python binaries in venv with wrappers
+    # So a symlink pointing to the venv will still work.
+    #
+    # The venv module creates a symlink to the Python interpreter,
+    # but this breaks the venv if you're using a symlink pointing
+    # to the virtualenv itself.
+    #
+    # By replacing the Python interpreter symlink with a wrapper it can be
+    # properly linked to in another derivation.
+    cc = os.environ.get("CC", "cc")
+    subprocess.run(
+        [cc, "-Wall", "-Werror", "-Wpedantic", "-Wno-overlength-strings", "-Os", "-x", "c", "-o", bin, "-"],
+        check=True,
+        input=(
+            """
+       #include <unistd.h>
+       #include <stdlib.h>
+
+       int main(int argc, char **argv) {
+           argv[0] = "%s";
+           return execv("%s", argv);
+       }
+    """
+            % (bin, target)
+            + "\n"
+        ).encode(),
+    )
+
+
+def wrap_python(python_root: Path, out_root: Path):
+    for bin in out_root.joinpath("bin").iterdir():
+        st_mode = lstat(bin).st_mode
+        if not S_ISLNK(st_mode):
+            continue
+
+        target = bin.readlink()
+        if target.is_relative_to(python_root):
+            bin.unlink()
+            wrap_python_bin(bin, target)
+
+
 def main():
     args = arg_parser.parse_args(namespace=ArgsNS)
 
@@ -302,6 +345,7 @@ def main():
     builder.setup_python(context)
     builder.create_configuration(context)
     fixup_pyvenv(python_root, out_root)
+    wrap_python(python_root, out_root)
 
     skip_paths = [
         # Let other hooks manage nix-support
