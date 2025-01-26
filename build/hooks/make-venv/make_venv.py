@@ -294,7 +294,7 @@ def main():
             dependencies.append(Path(dep_root))
 
     # Write virtualenv
-    builder = EnvBuilder(symlinks=True)
+    builder = EnvBuilder(symlinks=True, prompt=os.environ.get("name", "venv"))
     context = builder.ensure_directories(str(out_root))
     context.executable = str(python_bin.joinpath(EXECUTABLE))
     context.python_dir = str(python_bin)
