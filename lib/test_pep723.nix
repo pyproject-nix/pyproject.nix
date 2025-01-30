@@ -163,6 +163,34 @@ in
       };
     };
 
+    testEmptyLine = {
+      expr =
+        (pep723.parseScript ''
+          # /// script
+          # requires-python = ">=3.11"
+          # # Note: Empty line below
+          #
+          # ///
+        '').requires-python;
+      expected = [
+        {
+          op = ">=";
+          version = {
+            dev = null;
+            epoch = 0;
+            local = null;
+            post = null;
+            pre = null;
+            release = [
+              3
+              11
+            ];
+            str = "3.11";
+          };
+        }
+      ];
+    };
+
     # Note the empty line in the script.
     testHolyMetadata = {
       expr = pep723.parseScript ''

@@ -22,7 +22,7 @@ let
   stripComment =
     l:
     let
-      m = match " *# (.+)" l;
+      m = match " *# ?(.*)" l;
     in
     if match " *" l != null then
       l
