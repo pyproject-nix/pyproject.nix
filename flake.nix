@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   };
 
   outputs =
@@ -159,7 +159,13 @@
             pkgs.runCommand "typing-check"
               {
                 nativeBuildInputs = [
-                  pkgs.basedpyright
+                  (pkgs.basedpyright.overrideAttrs(old: {
+                    # Nixpkgs build of basedpyright is broken because of a dangling symlinks check
+                    postInstall = old.postInstall + ''
+
+                      find -L $out -type l -print -delete
+                    '';
+                  }))
                   pkgs.python3
                 ];
               }
