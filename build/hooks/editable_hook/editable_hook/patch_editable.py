@@ -97,7 +97,7 @@ def patch_pth(
         # Bare path, turn into Python line
         elif line.startswith(build_dir):
             lines.append(
-                f'import sys; import os.path; sys.path.append(os.path.expandvars(("{replacement}{line[len(build_dir):]}")))'
+                f'import sys; import os.path; sys.path.append(os.path.expandvars(("{replacement}{line[len(build_dir) :]}")))'
             )
             patched = True
         else:
