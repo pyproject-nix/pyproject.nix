@@ -13,6 +13,8 @@ let
   inherit (pkgs) buildPackages;
   pythonSitePackages = python.sitePackages;
 
+  isCross = stdenv.buildPlatform != stdenv.hostPlatform;
+
   # When cross compiling create a virtual environment for the build.
   #
   # Because Nixpkgs builds cross compiled Python in a separate
@@ -29,7 +31,7 @@ let
   '';
 
   pythonInterpreter =
-    if stdenv.buildPlatform != stdenv.hostPlatform then
+    if isCross then
       "${crossPython}/bin/${baseNameOf pythonOnBuildForHost.interpreter}"
     else
       pythonOnBuildForHost.interpreter;
@@ -51,9 +53,7 @@ in
       substitutions = {
         inherit pythonInterpreter;
         pythonPath = lib.concatStringsSep ":" (
-          lib.optional (
-            stdenv.buildPlatform != stdenv.hostPlatform
-          ) "${python.pythonOnBuildForHost}/${python.sitePackages}"
+          lib.optional isCross "${python.pythonOnBuildForHost}/${python.sitePackages}"
           ++ [
             "${python}/${python.sitePackages}"
           ]
@@ -194,13 +194,18 @@ in
               pyprojectInstallHook
               pyprojectOutputSetupHook
             ]
-            ++ lib.optional (stdenv.buildPlatform != stdenv.hostPlatform) pyprojectCrossShebangHook
+            ++ lib.optional isCross pyprojectCrossShebangHook
             ++ extraHooks;
         } ./meta-hook.sh
       )
-      {
-        python = pythonOnBuildForHost;
-      };
+      (
+        {
+          python = pythonOnBuildForHost;
+        }
+        // lib.optionalAttrs isCross {
+          pyprojectInstallHook = hooks.pyprojectPypaInstallHook;
+        }
+      );
 
   /*
     Hook used to build prebuilt wheels.
@@ -249,5 +254,22 @@ in
         editableHook = editableHook';
       };
     } ./pyproject-fixup-editable-hook.sh
+  ) { };
+
+  /*
+    Install hook using pypa/installer.
+
+    Used instead of `pyprojectInstallHook` for cross compilation support.
+  */
+  pyprojectPypaInstallHook = callPackage (
+    { pythonPkgsBuildHost }:
+    makeSetupHook {
+      name = "pyproject-pypa-install-hook";
+      substitutions = {
+        inherit (pythonPkgsBuildHost) installer;
+        inherit pythonInterpreter pythonSitePackages;
+        wrapper = ./pypa-install-hook/wrapper.py;
+      };
+    } ./pypa-install-hook/pyproject-pypa-install-hook.sh
   ) { };
 }
