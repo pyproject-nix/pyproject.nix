@@ -293,9 +293,11 @@ lib.fix (self: {
         let
           m = match "linux_(.+)" platformTag;
           arch = elemAt m 0;
+
+          linuxArch = if platform.linuxArch == "arm64" then "aarch64" else platform.linuxArch;
         in
         assert m != null;
-        platform.isLinux && arch == platform.linuxArch
+        platform.isLinux && arch == linuxArch
       )
     else
       throw "Unknown platform tag: '${platformTag}'";
