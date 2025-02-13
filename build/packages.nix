@@ -27,9 +27,15 @@ let
       stdenv,
       pythonPkgsBuildHost,
       pkgsFinal,
+      pkgs,
     }:
     {
-      inherit python stdenv pythonPkgsBuildHost;
+      inherit
+        python
+        pkgs
+        stdenv
+        pythonPkgsBuildHost
+        ;
 
       # Initialize dependency resolvers
       resolveBuildSystem = mkResolveBuildSystem pythonPkgsBuildHost;
@@ -90,6 +96,7 @@ in
   newScope,
   buildPackages,
   stdenv,
+  pkgs,
 }:
 makeScope newScope (
   final:
@@ -139,7 +146,7 @@ makeScope newScope (
       throw "${name} ${spec}";
   }
   // (mkPythonSet {
-    inherit python stdenv;
+    inherit python stdenv pkgs;
     pkgsFinal = final;
     pythonPkgsBuildHost = final.pythonPkgsHostHost;
   })
@@ -156,6 +163,7 @@ makeScope newScope (
             python = python.pythonOnBuildForHost;
             inherit (final) pythonPkgsBuildHost;
             inherit pkgsFinal;
+            pkgs = buildPackages;
           }
         ))
       else

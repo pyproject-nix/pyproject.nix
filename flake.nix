@@ -159,12 +159,14 @@
             pkgs.runCommand "typing-check"
               {
                 nativeBuildInputs = [
-                  (pkgs.basedpyright.overrideAttrs(old: {
+                  (pkgs.basedpyright.overrideAttrs (old: {
                     # Nixpkgs build of basedpyright is broken because of a dangling symlinks check
-                    postInstall = old.postInstall + ''
+                    postInstall =
+                      old.postInstall
+                      + ''
 
-                      find -L $out -type l -print -delete
-                    '';
+                        find -L $out -type l -print -delete
+                      '';
                   }))
                   pkgs.python3
                 ];
