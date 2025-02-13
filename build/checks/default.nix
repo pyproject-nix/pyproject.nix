@@ -250,4 +250,34 @@ listToAttrs (
       cffi = [ ];
     };
 
+  install-dist =
+    let
+      python = pkgs.python3;
+
+      pythonSet =
+        (pkgs.callPackage pyproject-nix.build.packages {
+          inherit python;
+        }).overrideScope
+          buildSystems;
+    in
+    pythonSet.build.override {
+      pyprojectHook = pythonSet.pyprojectDistHook;
+    };
+
+  install-dist-cross =
+    let
+      pkgs' = pkgs.pkgsCross.aarch64-multiplatform;
+
+      python = pkgs.python3;
+
+      pythonSet =
+        (pkgs'.callPackage pyproject-nix.build.packages {
+          inherit python;
+        }).overrideScope
+          buildSystems;
+    in
+    pythonSet.build.override {
+      pyprojectHook = pythonSet.pyprojectDistHook;
+    };
+
 }

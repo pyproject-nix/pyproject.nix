@@ -7,6 +7,7 @@
   stdenv,
   hooks,
   runCommand,
+  substituteAll,
 }:
 let
   inherit (python) pythonOnBuildForHost;
@@ -272,4 +273,38 @@ in
       };
     } ./pypa-install-hook/pyproject-pypa-install-hook.sh
   ) { };
+
+  /*
+    Install dist directory with wheels into output
+    .
+  */
+  pyprojectInstallDistHook =
+    callPackage
+      (
+        { ugrep }:
+        makeSetupHook {
+          name = "pyproject-install-dist-hook";
+          substitutions = {
+            inherit pythonInterpreter;
+            script = substituteAll {
+              src = ./dist-hook/install-wheels.py;
+              ugrep = lib.getExe ugrep;
+              store_dir = builtins.storeDir;
+            };
+          };
+        } ./dist-hook/pyproject-install-dist-hook.sh
+      )
+      {
+        inherit (buildPackages) ugrep;
+      };
+
+  /*
+    Hook used to build a wheel file and install it into the output directory.
+
+    Use instead of pyprojectHook.
+  */
+  pyprojectDistHook = hooks.pyprojectHook.override {
+    pyprojectInstallHook = hooks.pyprojectInstallDistHook;
+    pyprojectOutputSetupHook = null;
+  };
 }
