@@ -280,4 +280,21 @@ listToAttrs (
       pyprojectHook = pythonSet.pyprojectDistHook;
     };
 
+  install-dist-sdist =
+    let
+      python = pkgs.python3;
+
+      pythonSet =
+        (pkgs.callPackage pyproject-nix.build.packages {
+          inherit python;
+        }).overrideScope
+          buildSystems;
+    in
+    (pythonSet.build.override {
+      pyprojectHook = pythonSet.pyprojectDistHook;
+    }).overrideAttrs
+      (_old: {
+        env.uvBuildType = "sdist";
+      });
+
 }
