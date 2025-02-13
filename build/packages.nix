@@ -86,6 +86,9 @@ let
         pyprojectBuildEditableHook
         pyprojectFixupEditableHook
         pyprojectEditableHook
+        pyprojectInstallDistHook
+        pyprojectDistHook
+        pyprojectPypaInstallHook
         ;
     };
 
