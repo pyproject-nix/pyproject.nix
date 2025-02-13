@@ -287,7 +287,7 @@ in
           substitutions = {
             inherit pythonInterpreter;
             script = substituteAll {
-              src = ./dist-hook/install-wheels.py;
+              src = ./dist-hook/install-dist.py;
               ugrep = lib.getExe ugrep;
               store_dir = builtins.storeDir;
             };

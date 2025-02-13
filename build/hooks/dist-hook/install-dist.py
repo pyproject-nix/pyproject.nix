@@ -17,11 +17,11 @@ def main():
     except KeyError:
         check_dist = True
 
-    wheels: list[Path] = [dist_file for dist_file in dist.iterdir() if dist_file.name.endswith(".whl")]
+    dists: list[Path] = list(dist.iterdir())
 
     # Verify that wheel is not containing store path
     if check_dist:
-        for wheel in wheels:
+        for dist in dists:
             p = subprocess.run(
                 [
                     "@ugrep@",
@@ -30,19 +30,19 @@ def main():
                     # zip
                     "-z",
                     "@store_dir@",
-                    wheel,
+                    dist,
                 ]
             )
             if p.returncode == 0:
                 raise ValueError(f"""
-                Built whheel '{wheel.name}' contains a Nix store path reference.
+                Built distribution '{dist.name}' contains a Nix store path reference.
 
-                Wheel not usable for distribution.
+                Distribution not usable.
                 """)
 
-    # Copy wheels to output
+    # Copy dists to output
     out.mkdir()
-    for wheel in wheels:
+    for wheel in dists:
         shutil.copy(wheel, out.joinpath(wheel.name))
 
 
