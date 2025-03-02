@@ -177,9 +177,13 @@ in
                 pythonPackages.wheel
               ];
         }
-        // optionalAttrs (pyproject.project ? name) { pname = pyproject.project.name; }
+        // optionalAttrs (pyproject ? project && pyproject.project ? name) {
+          pname = pyproject.project.name;
+        }
         // optionalAttrs (project.projectRoot != null) { src = project.projectRoot; }
-        // optionalAttrs (pyproject.project ? version) { inherit (pyproject.project) version; }
+        // optionalAttrs (pyproject ? project && pyproject.project ? version) {
+          inherit (pyproject.project) version;
+        }
         // optionalAttrs (project.requires-python != null) {
           disabled =
             !lib.all (spec: pep440.comparators.${spec.op} pythonVersion spec.version) project.requires-python;
