@@ -6,8 +6,12 @@ pyprojectWheelDist() {
   runHook preBuild
 
   echo "Creating dist..."
-  mkdir -p dist
-  ln -s "$src" "dist/$(stripHash "$src")"
+  if [ -d "$src" ]; then
+    ln -s "$src" dist
+  else
+    mkdir -p dist
+    ln -s "$src" "dist/$(stripHash "$src")"
+  fi
 
   runHook postBuild
   echo "Finished executing pyprojectWheelDist"
