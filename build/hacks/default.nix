@@ -47,31 +47,34 @@ in
       # Example: pkgs.python3Packages.torchWithoutCuda
       from,
       # Previous package to take passthru from
-      prev,
+      prev ? {
+        passthru = { };
+      },
     }:
     assert isDerivation from;
     assert isAttrs prev; # Allow prev to be a simple attrset
     let
-      nixpkgsPython = from.pythonModule;
-
       pyprojectHook = lib.findFirst (
         input: input.name == "pyproject-hook"
       ) (throw "Pyproject hook not found in ${prev.drvPath}") prev.nativeBuildInputs;
-      inherit (pyprojectHook.passthru) python;
+
+      nixpkgsPython = from.pythonModule;
+      # Allow to skip prev argument in cases like https://github.com/pyproject-nix/pyproject.nix/issues/267
+      python = if prev ? nativeBuildInputs then pyprojectHook.passthru.python else null;
 
     in
-    lib.throwIf (nixpkgsPython.pythonVersion != python.pythonVersion)
-      "Mismatching Python versions for ${from.drvPath} & ${prev.drvPath}: ${nixpkgsPython.pythonVersion} != ${python.pythonVersion}"
+    lib.throwIf (python != null && nixpkgsPython.pythonVersion != python.pythonVersion)
+      "Mismatching Python versions for ${from.drvPath} & ${prev.drvPath or "<no-drv>"}: ${nixpkgsPython.pythonVersion} != ${python.pythonVersion}"
       lib.warnIf
-      (nixpkgsPython != python)
-      "Mismatching Python derivations for ${from.drvPath} & ${prev.drvPath} ${nixpkgsPython} != ${python}, beware of ABI compatibility issues"
+      (python != null && nixpkgsPython != python)
+      "Mismatching Python derivations for ${from.drvPath} & ${prev.drvPath or "<no-drv>"} ${nixpkgsPython} != ${python}, beware of ABI compatibility issues"
       (
         stdenv.mkDerivation {
           inherit (from) pname version;
           inherit (prev) passthru;
 
           nativeBuildInputs = [
-            python3
+            nixpkgsPython.pythonOnBuildForHost
           ];
 
           dontUnpack = true;
