@@ -1,6 +1,6 @@
 # hacks
 
-This documentation is a guide, for more details see [hacks library reference](../../build/hacks.md).
+This documentation is a guide, for more details see [hacks library reference](../build/hacks.md).
 
 ## Using prebuilt packages from Nixpkgs
 
