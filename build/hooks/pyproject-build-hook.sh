@@ -9,8 +9,8 @@ pyprojectBuildPhase() {
 
   echo "Creating a distribution..."
   if [ "${buildType}" != "wheel" ] && [ "${buildType}" != "sdist" ]; then
-      echo "Build type '${buildType}' is unknown" >> /dev/stderr
-      false
+    echo "Build type '${buildType}' is unknown" >>/dev/stderr
+    false
   fi
   env PYTHONPATH="${NIX_PYPROJECT_PYTHONPATH}:${PYTHONPATH}" @uv@/bin/uv build -v --no-cache --python=@pythonInterpreter@ --offline --no-build-isolation --out-dir dist/ "--${buildType}" $uvBuildFlags
 

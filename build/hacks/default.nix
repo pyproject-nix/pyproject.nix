@@ -1,7 +1,7 @@
 { pkgs, lib }:
 
 let
-  inherit (pkgs) stdenv python3;
+  inherit (pkgs) stdenv;
   inherit (lib) isDerivation isAttrs;
 
 in
