@@ -50,6 +50,8 @@ in
       prev ? {
         passthru = { };
       },
+      # Disable ABI compatibility warnings
+      quiet ? false,
     }:
     assert isDerivation from;
     assert isAttrs prev; # Allow prev to be a simple attrset
@@ -66,7 +68,7 @@ in
     lib.throwIf (python != null && nixpkgsPython.pythonVersion != python.pythonVersion)
       "Mismatching Python versions for ${from.drvPath} & ${prev.drvPath or "<no-drv>"}: ${nixpkgsPython.pythonVersion} != ${python.pythonVersion}"
       lib.warnIf
-      (python != null && nixpkgsPython != python)
+      (!quiet && python != null && nixpkgsPython != python)
       "Mismatching Python derivations for ${from.drvPath} & ${prev.drvPath or "<no-drv>"} ${nixpkgsPython} != ${python}, beware of ABI compatibility issues"
       (
         stdenv.mkDerivation {
