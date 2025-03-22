@@ -77,7 +77,6 @@ let
         pyprojectConfigureHook
         pyprojectBuildHook
         pyprojectInstallHook
-        pyprojectBytecodeHook
         pyprojectOutputSetupHook
         pyprojectCrossShebangHook
         pyprojectMakeVenvHook
