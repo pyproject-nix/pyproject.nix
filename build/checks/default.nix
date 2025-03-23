@@ -169,7 +169,7 @@ let
         '';
 
     }
-    // lib.optionalAttrs (python.pythonOlder == "3.12" && python.stdenv.isDarwin) {
+    // lib.optionalAttrs (!(python.pythonOlder "3.12" && python.stdenv.isDarwin)) {
       # Fails on Darwin, but only on Python <3.12:
       # Fixed by https://github.com/NixOS/nixpkgs/pull/390454
       mkderivation-editable =
