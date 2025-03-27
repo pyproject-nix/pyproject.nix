@@ -1,14 +1,17 @@
 { lib, ... }:
 
 let
-  inherit (lib)
+  inherit (builtins)
     concatMap
     attrNames
     elemAt
     genericClosure
     match
-    genAttrs
+    ;
+
+  inherit (lib)
     throwIf
+    genAttrs
     ;
 
 in
