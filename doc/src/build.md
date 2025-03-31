@@ -8,7 +8,7 @@ Pyproject.nix can be used with nixpkgs `buildPythonPackage`/`packageOverrides`/`
 
 ## Problems with nixpkgs Python builders
 
-Nixpkgs Python infrastucture relies on [dependency propagation](https://nixos.org/manual/nixpkgs/unstable/#ssec-stdenv-dependencies-propagated).
+Nixpkgs Python infrasrtucture relies on [dependency propagation](https://nixos.org/manual/nixpkgs/unstable/#ssec-stdenv-dependencies-propagated).
 The propagation mechanism works through making dependencies available to the builder at build-time, and recording their Nix store paths in `$out/nix-support/propagated-build-inputs`.
 [Setup hooks](https://nixos.org/manual/nixpkgs/unstable/#ssec-setup-hooks) are then used to add these packages to `$PYTHONPATH` for discovery by the Python interpreter which adds everything from `$PYTHONPATH` to `sys.path` at startup.
 
@@ -36,7 +36,7 @@ Making matters even worse: Any dependency on `$PYTHONPATH` takes precedence over
 
 Nix dependency graphs are required to be a [DAG](https://en.wikipedia.org/wiki/Directed_acyclic_graph), but Python dependencies can be cyclic.
 Dependency propagation is inherently incompatible with cyclic dependencies.
-In nixpkgs propagation isssues are commonly worked around by patching packages in various ways.
+In nixpkgs propagation issues are commonly worked around by patching packages in various ways.
 
 ### Binary wrapping
 
