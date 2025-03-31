@@ -40,7 +40,7 @@ It can can be loaded from many different sources:
 ### [Validators](./lib/validators.md)
 
 Validators work on dependency constraints as defined in a `project` and offers validation for them.
-This can be useful to check that a package set is compilant with the specification.
+This can be useful to check that a package set is compliant with the specification.
 
 ### [Renderers](./lib/renderers.md)
 

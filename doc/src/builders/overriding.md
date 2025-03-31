@@ -77,7 +77,8 @@ let
   pyprojectOverrides = final: prev: {
     pyzmq = prev.pyzmq.overrideAttrs(old: {
       buildInputs = (old.buildInputs or [ ]) ++ [ pkgs.zeromq ];
-  });
+    });
+  };
 
 in
   pythonSet.overrideScope pyprojectOverrides
