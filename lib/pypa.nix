@@ -39,14 +39,18 @@ let
 
 in
 lib.fix (self: {
-  /*
+  /**
     Normalize package name as documented in https://packaging.python.org/en/latest/specifications/name-normalization/#normalization
 
-    Type: normalizePackageName :: string -> string
+    # Type:
+    `string -> string`
 
-    Example:
-      # readPyproject "Friendly-Bard"
-      "friendly-bard"
+    # Example
+    ```nix
+    readPyproject "Friendly-Bard"
+    ->
+    "friendly-bard"
+    ```
   */
   normalizePackageName =
     let
@@ -55,19 +59,22 @@ lib.fix (self: {
     in
     name: toLower (concatDash (filter isString (splitSep name)));
 
-  /*
+  /**
     Parse Python tags.
 
     As described in https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/#python-tag.
 
     Type: parsePythonTag :: string -> AttrSet
 
-    Example:
-    # parsePythonTag "cp37"
+    # Example
+    ```nix
+    parsePythonTag "cp37"
+    ->
     {
       implementation = "cpython";
       version = "37";
     }
+    ```
   */
   parsePythonTag =
     tag:
@@ -80,20 +87,24 @@ lib.fix (self: {
       version = optionalString (elemAt m 1);
     };
 
-  /*
+  /**
     Parse ABI tags.
 
     As described in https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/#python-tag.
 
-    Type: parseABITag :: string -> AttrSet
+    # Type
+    `string -> AttrSet`
 
-    Example:
-    # parseABITag "cp37dmu"
+    # Example:
+    ``` nix
+    parseABITag "cp37dmu"
+    ->
     {
       rest = "dmu";
       implementation = "cp";
       version = "37";
     }
+    ```
   */
   parseABITag =
     tag:
@@ -107,23 +118,28 @@ lib.fix (self: {
       rest = elemAt m 2;
     };
 
-  /*
+  /**
     Check whether string is a sdist file or not.
 
-    Type: isSdistFileName :: string -> bool
+    # Type
+    `string -> bool`
 
-    Example:
-    # isSdistFileName "cryptography-41.0.1.tar.gz"
+    # Example:
+    ```nix
+    isSdistFileName "cryptography-41.0.1.tar.gz"
+    ->
     true
+    ```
   */
   isSdistFileName =
     # The filename string
     name: matchSdistFileName name != null;
 
-  /*
+  /**
     Regex match a wheel file name, returning a list of match groups. Returns null if no match.
 
-    Type: matchWheelFileName :: string -> [ string ]
+    # Type
+    `string -> [ string ]`
   */
   matchWheelFileName =
     name:
@@ -132,26 +148,33 @@ lib.fix (self: {
     in
     if m != null then filter isString m else null;
 
-  /*
+  /**
     Check whether string is a wheel file or not.
 
-    Type: isWheelFileName :: string -> bool
+    # Type
+    `string -> bool`
 
-    Example:
-    # isWheelFileName "cryptography-41.0.1-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
+    # Example:
+    ```
+    isWheelFileName "cryptography-41.0.1-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
+    ->
     true
+    ```
   */
   isWheelFileName =
     # The filename string
     name: matchWheelFileName name != null;
 
-  /*
+  /**
     Parse PEP-427 wheel file names.
 
-     Type: parseFileName :: string -> AttrSet
+     # Type
+     `string -> AttrSet`
 
-     Example:
-     # parseFileName "cryptography-41.0.1-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
+     # Example:
+     ```nix
+     parseFileName "cryptography-41.0.1-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
+     ->
      {
       abiTag = {  # Parsed by pypa.parseABITag
         implementation = "abi";
@@ -169,6 +192,7 @@ lib.fix (self: {
       platformTags = [ "manylinux_2_17_aarch64" "manylinux2014_aarch64" ];
       version = "41.0.1";
     }
+    ```
   */
   parseWheelFileName =
     # The wheel filename is `{distribution}-{version}(-{build tag})?-{python tag}-{abi tag}-{platform tag}.whl`.
@@ -189,14 +213,18 @@ lib.fix (self: {
       filename = name;
     };
 
-  /*
+  /**
     Check whether an ABI tag is compatible with this python interpreter.
 
-    Type: isABITagCompatible :: derivation -> string -> bool
+    # Type
+    `derivation -> string -> bool`
 
-    Example:
-    # isABITagCompatible pkgs.python3 (pypa.parseABITag "cp37")
+    # Example:
+    ```nix
+    isABITagCompatible pkgs.python3 (pypa.parseABITag "cp37")
+    ->
     true
+    ```
   */
   isABITagCompatible =
     # Python interpreter derivation
@@ -227,14 +255,18 @@ lib.fix (self: {
         )
       );
 
-  /*
+  /**
     Check whether a platform tag is compatible with this python interpreter.
 
-    Type: isPlatformTagCompatible :: AttrSet -> derivation -> string -> bool
+    # Type
+    `AttrSet -> derivation -> string -> bool`
 
-    Example:
-    # isPlatformTagCompatible pkgs.python3 "manylinux2014_x86_64"
+    # Example:
+    ```nix
+    isPlatformTagCompatible pkgs.python3 "manylinux2014_x86_64"
+    ->
     true
+    ```
   */
   isPlatformTagCompatible =
     # Platform attrset (`lib.systems.elaborate "x86_64-linux"`)
@@ -302,14 +334,18 @@ lib.fix (self: {
     else
       throw "Unknown platform tag: '${platformTag}'";
 
-  /*
+  /**
     Check whether a Python language tag is compatible with this Python interpreter.
 
-    Type: isPythonTagCompatible :: derivation -> AttrSet -> bool
+    # Type
+    `derivation -> AttrSet -> bool`
 
-    Example:
-    # isPythonTagCompatible pkgs.python3 (pypa.parsePythonTag "py3")
+    # Example:
+    ```nix
+    isPythonTagCompatible pkgs.python3 (pypa.parsePythonTag "py3")
+    ->
     true
+    ```
   */
   isPythonTagCompatible =
     # Python interpreter derivation
@@ -337,14 +373,18 @@ lib.fix (self: {
         )
       );
 
-  /*
+  /**
     Check whether wheel file name is compatible with this python interpreter.
 
-    Type: isWheelFileCompatible :: derivation -> AttrSet -> bool
+    # Type
+    `derivation -> AttrSet -> bool`
 
-    Example:
-    # isWheelFileCompatible pkgs.python3 (pypa.parseWheelFileName "Pillow-9.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl")
+    # Example:
+    ```nix
+    isWheelFileCompatible pkgs.python3 (pypa.parseWheelFileName "Pillow-9.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl")
+    ->
     true
+    ```
   */
   isWheelFileCompatible =
     # Platform attrset (`lib.systems.elaborate "x86_64-linux"`)
@@ -361,14 +401,18 @@ lib.fix (self: {
       && lib.any (self.isPlatformTagCompatible platform libc) file.platformTags
     );
 
-  /*
+  /**
     Select compatible wheels from a list and return them in priority order.
 
-    Type: selectWheels :: AttrSet -> derivation -> [ AttrSet ] -> [ AttrSet ]
+    # Type
+    `AttrSet -> derivation -> [ AttrSet ] -> [ AttrSet ]`
 
-    Example:
-    # selectWheels (lib.systems.elaborate "x86_64-linux") [ (pypa.parseWheelFileName "Pillow-9.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl") ]
+    # Example:
+    ```nix
+    selectWheels (lib.systems.elaborate "x86_64-linux") [ (pypa.parseWheelFileName "Pillow-9.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl") ]
+    ->
     [ (pypa.parseWheelFileName "Pillow-9.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl") ]
+    ```
   */
   selectWheels =
     # Platform attrset (`lib.systems.elaborate "x86_64-linux"`)
