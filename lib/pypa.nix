@@ -15,8 +15,15 @@ let
     length
     sort
     head
+    elem
     ;
-  inherit (lib) isString toLower;
+  inherit (lib)
+    isString
+    toLower
+    concatStrings
+    take
+    splitString
+    ;
   inherit (lib.strings) hasPrefix toInt;
 
   matchWheelFileName = match "([^-]+)-([^-]+)(-([[:digit:]][^-]*))?-([^-]+)-([^-]+)-(.+).whl";
@@ -94,29 +101,11 @@ lib.fix (self: {
 
     # Type
     `string -> AttrSet`
-
-    # Example:
-    ``` nix
-    parseABITag "cp37dmu"
-    ->
-    {
-      rest = "dmu";
-      implementation = "cp";
-      version = "37";
-    }
     ```
   */
-  parseABITag =
-    tag:
-    let
-      m = match "([a-z]+)([0-9]*)_?([a-z0-9]*)" tag;
-    in
-    assert m != null;
-    {
-      implementation = normalizeImpl (elemAt m 0);
-      version = optionalString (elemAt m 1);
-      rest = elemAt m 2;
-    };
+  parseABITag = tag: {
+    inherit tag; # Verbatim tag
+  };
 
   /**
     Check whether string is a sdist file or not.
@@ -229,31 +218,38 @@ lib.fix (self: {
   isABITagCompatible =
     # Python interpreter derivation
     python:
-    # ABI tag string
-    abiTag:
     let
-      inherit (python.passthru) sourceVersion implementation;
+      inherit (python.passthru) sourceVersion implementation pythonVersion;
+
+      # TODO: Implement ABI tags in the nixpkgs Python derivation.
+      #
+      # This isn't strictly correct in the face of things like Python free-threading
+      # which has a `t` suffix but there is no way right now to introspect & check
+      # if the GIL is enabled or not.
+      #
+      # So a free-threaded build will erroneously be returned as compatible with
+      # regular CPython wheels.
+      abiTags =
+        if implementation == "cpython" then
+          [
+            "none"
+            "any"
+            "abi3"
+            "cp${sourceVersion.major}${sourceVersion.minor}"
+          ]
+        else if implementation == "pypy" then
+          [
+            "none"
+            "any"
+            "pypy${concatStrings (take 2 (splitString "." pythonVersion))}_pp${sourceVersion.major}${sourceVersion.minor}"
+          ]
+        else
+          [
+            "none"
+            "any"
+          ];
     in
-    (
-      # None is a wildcard compatible with any implementation
-      (abiTag.implementation == "none" || abiTag.implementation == "any")
-      ||
-        # implementation == sys.implementation.name
-        abiTag.implementation == implementation
-      ||
-        # The CPython stable ABI is abi3 as in the shared library suffix.
-        (abiTag.implementation == "abi" && implementation == "cpython")
-    )
-    &&
-      # Check version
-      (
-        abiTag.version == null
-        || abiTag.version == sourceVersion.major
-        || (
-          hasPrefix sourceVersion.major abiTag.version
-          && ((toInt (sourceVersion.major + sourceVersion.minor)) == toInt abiTag.version)
-        )
-      );
+    tag: elem tag.tag abiTags;
 
   /**
     Check whether a platform tag is compatible with this python interpreter.
@@ -350,11 +346,18 @@ lib.fix (self: {
   isPythonTagCompatible =
     # Python interpreter derivation
     python:
+    let
+      #   inherit (python.passthru) sourceVersion implementation;
+      # in
+      inherit (python.passthru) implementation pythonVersion;
+
+      version' = splitString "." pythonVersion;
+      major = elemAt version' 0;
+      minor = elemAt version' 1;
+    in
+    assert length version' >= 2;
     # Python tag
     pythonTag:
-    let
-      inherit (python.passthru) sourceVersion implementation;
-    in
     (
       # Python is a wildcard compatible with any implementation
       pythonTag.implementation == "python"
@@ -366,11 +369,8 @@ lib.fix (self: {
       # Check version
       (
         pythonTag.version == null
-        || pythonTag.version == sourceVersion.major
-        || (
-          hasPrefix sourceVersion.major pythonTag.version
-          && ((toInt (sourceVersion.major + sourceVersion.minor)) >= toInt pythonTag.version)
-        )
+        || pythonTag.version == major
+        || (hasPrefix major pythonTag.version && ((toInt (major + minor)) >= toInt pythonTag.version))
       );
 
   /**
@@ -393,10 +393,13 @@ lib.fix (self: {
     libc:
     # Python interpreter derivation
     python:
+    let
+      isABITagCompatible = self.isABITagCompatible python;
+    in
     # The parsed wheel filename
     file:
     (
-      self.isABITagCompatible python file.abiTag
+      isABITagCompatible file.abiTag
       && lib.any (self.isPythonTagCompatible python) file.languageTags
       && lib.any (self.isPlatformTagCompatible platform libc) file.platformTags
     );
@@ -430,14 +433,17 @@ lib.fix (self: {
       ''
     else
       let
+        isABITagCompatible = self.isABITagCompatible python;
+        isPythonTagCompatible = self.isPythonTagCompatible python;
+
         # Get sorting/filter criteria fields
         withSortedTags = map (
           file:
           let
-            abiCompatible = self.isABITagCompatible python file.abiTag;
+            abiCompatible = isABITagCompatible file.abiTag;
 
             # Filter only compatible tags
-            languageTags = filter (self.isPythonTagCompatible python) file.languageTags;
+            languageTags = filter isPythonTagCompatible file.languageTags;
             # Extract the tag as a number. E.g. "37" is `toInt "37"` and "none"/"any" is 0
             languageTags' = map (tag: if tag == "none" then 0 else toInt tag.version) languageTags;
 

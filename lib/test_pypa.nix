@@ -57,18 +57,14 @@ in
     testWithFlags = {
       expr = parseABITag "cp37dmu";
       expected = {
-        rest = "dmu";
-        implementation = "cpython";
-        version = "37";
+        tag = "cp37dmu";
       };
     };
 
     testWithPypyFlags = {
       expr = parseABITag "pypy38_pp73";
       expected = {
-        rest = "pp73";
-        implementation = "pypy";
-        version = "38";
+        tag = "pypy38_pp73";
       };
     };
   };
@@ -78,9 +74,7 @@ in
       expr = parseWheelFileName "distribution-1.0-1-py27-none-any.whl";
       expected = {
         abiTag = {
-          implementation = "none";
-          version = null;
-          rest = "";
+          tag = "none";
         };
         buildTag = "1";
         distribution = "distribution";
@@ -100,9 +94,7 @@ in
       expr = parseWheelFileName "cryptography-41.0.1-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl";
       expected = {
         abiTag = {
-          implementation = "abi";
-          version = "3";
-          rest = "";
+          tag = "abi3";
         };
         buildTag = null;
         distribution = "cryptography";
@@ -125,9 +117,7 @@ in
       expr = parseWheelFileName "Werkzeug-1.0.0-py2.py3-none-any.whl";
       expected = {
         abiTag = {
-          implementation = "none";
-          version = null;
-          rest = "";
+          tag = "none";
         };
         buildTag = null;
         distribution = "Werkzeug";

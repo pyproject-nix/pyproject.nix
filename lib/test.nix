@@ -201,8 +201,8 @@ let
         pythonVersion = "3.9";
         isLinux = true;
         implementation = "pypy";
-        sourceVersion.major = "3";
-        sourceVersion.minor = "9";
+        sourceVersion.major = "7";
+        sourceVersion.minor = "3";
         system = "x86_64-linux";
       };
     };
