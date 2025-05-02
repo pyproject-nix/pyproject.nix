@@ -6,14 +6,15 @@
 }:
 
 let
-  env =
-    mkVirtualEnv "editable-hook-env" {
+  env = mkVirtualEnv "editable-hook-env" (
+    {
       libcst = [ ];
       pyproject-hooks = [ ];
     }
     // lib.optionalAttrs (python.pythonOlder "3.11") {
       tomli = [ ];
-    };
+    }
+  );
 
 in
 runCommand "editable-hook" { } ''
