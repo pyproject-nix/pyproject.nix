@@ -7,7 +7,7 @@
   stdenv,
   hooks,
   runCommand,
-  substituteAll,
+  replaceVars,
 }:
 let
   inherit (python) pythonOnBuildForHost;
@@ -286,8 +286,7 @@ in
           name = "pyproject-install-dist-hook";
           substitutions = {
             inherit pythonInterpreter;
-            script = substituteAll {
-              src = ./dist-hook/install-dist.py;
+            script = replaceVars ./dist-hook/install-dist.py {
               ugrep = lib.getExe ugrep;
               store_dir = builtins.storeDir;
             };
