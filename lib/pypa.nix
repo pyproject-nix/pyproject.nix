@@ -296,7 +296,7 @@ lib.fix (self: {
         )
       )
     else if platformTag == "win32" then
-      (platform.isWindows && platform.is32Bit && platform.isx86)
+      (platform.isWindows && platform.is32bit && platform.isx86_32)
     else if hasPrefix "win_" platformTag then
       (
         let
