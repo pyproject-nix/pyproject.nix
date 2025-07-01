@@ -327,6 +327,41 @@ lib.fix (self: {
         assert m != null;
         platform.isLinux && arch == linuxArch
       )
+    else if hasPrefix "ios" platformTag then
+      # e.g., ios_13_0_arm64_iphoneos
+      let
+        m = match "ios_([0-9]+)_([0-9]+)_(.+)_.+" platformTag;
+        major = elemAt m 0;
+        minor = elemAt m 0;
+        arch = elemAt m 2;
+      in
+      assert m != null;
+      platform.isDarwin
+      && arch == platform.darwinArch
+      && compareVersions platform.darwinSdkVersion "${major}.${minor}" >= 0
+    else if hasPrefix "android" platformTag then
+      # e.g., android_32_arm64_v8a
+      let
+        m = match "android_([0-9])+_(.+)" platformTag;
+        apiLevel = elemAt m 0;
+        abi = elemAt m 1;
+      in
+      assert m != null;
+      platform.isAndroid
+      &&
+        (
+          if abi == "armeabi_v7a" then
+            "arm"
+          else if abi == "arm64_v8a" then
+            "arm64"
+          else if abi == "x86" then
+            "x86"
+          else if abi == "x86_64" then
+            "x86_64"
+          else
+            throw "Unhandled Android ABI: ${abi}"
+        ) == platform.linuxArch
+      && compareVersions platform.androidSdkVersion apiLevel >= 0
     else
       false;
 
