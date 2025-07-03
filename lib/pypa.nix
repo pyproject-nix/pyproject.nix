@@ -336,7 +336,7 @@ lib.fix (self: {
         arch = elemAt m 2;
       in
       assert m != null;
-      platform.isDarwin
+      platform.isiOS
       && arch == platform.darwinArch
       && compareVersions platform.darwinSdkVersion "${major}.${minor}" >= 0
     else if hasPrefix "android" platformTag then
