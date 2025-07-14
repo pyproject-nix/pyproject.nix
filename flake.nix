@@ -97,24 +97,6 @@
         {
           nix = mkShell' { inherit (pkgs) nix-unit; };
 
-          lix = mkShell' {
-            nix-unit =
-              let
-                lix = pkgs.lixVersions.latest;
-              in
-              (pkgs.nix-unit.override {
-                # Hacky overriding :)
-                nixVersions = lib.mapAttrs (_n: _v: lix) pkgs.nixVersions;
-                # nix = pkgs.lixVersions.latest;
-              }).overrideAttrs
-                (_old: {
-                  pname = "lix-unit";
-                  name = "lix-unit-${lix.version}";
-                  inherit (lix) version;
-                  src = npins.lix-unit;
-                });
-          };
-
           default = self.devShells.${system}.nix;
         }
       );
