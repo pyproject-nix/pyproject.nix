@@ -40,15 +40,17 @@ in
         ++ concatMap (
           name':
           let
-            extra' = pkg.passthru.optional-dependencies.${name'} or { };
-            group' = pkg.passthru.dependency-groups.${name'} or { };
+            extra' = pkg.passthru.optional-dependencies.${name'} or null;
+            group' = pkg.passthru.dependency-groups.${name'} or null;
           in
-          throwIf (extra' == { } && group' == { })
-            "Extra/group name '${name'}' does not match either extra or dependency group"
+          throwIf (extra' == null && group' == null)
+            "Extra/group name '${name'}' does not match either extra or dependency group in package ${pkg.pname}"
             concatMap
             (name: recurse name extra'.${name})
             (attrNames extra')
-          ++ concatMap (name: recurse name group'.${name}) (attrNames group')
+          ++ concatMap (name: recurse name group'.${name}) (
+            if group' != null then (attrNames group') else [ ]
+          )
         ) extras;
 
       # Memoise known build systems with no extras enabled for better performance
