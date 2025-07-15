@@ -28,7 +28,7 @@
   - [nixpkgs](./nixpkgs-build.md)
     - [renderers](./lib/renderers.md)
     - [validators](./lib/validators.md)
-- [Standards APIs](./reference.md)
+- [Standards APIs](./reference-std.md)
   - [pep440](./lib/pep440.md)
   - [pep508](./lib/pep508.md)
   - [pep518](./lib/pep518.md)
@@ -42,7 +42,7 @@
   - [eggs](./lib/eggs.md)
   - [pip](./lib/pip.md)
 
-- [Build](./build.md)
+- [Build]()
   - [lib](./build/lib/index.md)
     - [renderers](./build/lib/renderers.md)
     - [resolvers](./build/lib/resolvers.md)
