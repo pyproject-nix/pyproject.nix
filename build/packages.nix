@@ -49,6 +49,7 @@ let
           dontConfigure = true;
           dontUnpack = true;
           dontBuild = true;
+          dontPatch = true;
 
           # Skip linking files into venv
           venvSkip = [ ];
@@ -68,8 +69,6 @@ let
               ++ map (pat: "--ignore-collisions ${pat}") finalAttrs.venvIgnoreCollisions
             );
           };
-
-          buildInputs = pkgsFinal.resolveVirtualEnv spec;
         });
 
       hooks = pkgsFinal.callPackage ./hooks { };
