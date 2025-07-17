@@ -17,6 +17,11 @@ pyprojectConfigurePhase() {
     export UV_COMPILE_BYTECODE=1
   fi
 
+  # Disable bytecode compilation timeout for more reliable builds on very loaded systems
+  if [ -z "${UV_COMPILE_BYTECODE_TIMEOUT-}" ]; then
+    export UV_COMPILE_BYTECODE_TIMEOUT=0
+  fi
+
   # Opt out of uv-specific installer metadata that causes non-reproducible builds.
   if [ -z "${UV_NO_INSTALLER_METADATA-}" ]; then
     export UV_NO_INSTALLER_METADATA=1
