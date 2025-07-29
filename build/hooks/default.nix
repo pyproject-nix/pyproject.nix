@@ -187,16 +187,15 @@ in
         makeSetupHook {
           name = "pyproject-hook";
           passthru.python = python;
-          propagatedBuildInputs =
-            [
-              python
-              pyprojectConfigureHook
-              pyprojectBuildHook
-              pyprojectInstallHook
-              pyprojectOutputSetupHook
-            ]
-            ++ lib.optional isCross pyprojectCrossShebangHook
-            ++ extraHooks;
+          propagatedBuildInputs = [
+            python
+            pyprojectConfigureHook
+            pyprojectBuildHook
+            pyprojectInstallHook
+            pyprojectOutputSetupHook
+          ]
+          ++ lib.optional isCross pyprojectCrossShebangHook
+          ++ extraHooks;
         } ./meta-hook.sh
       )
       (

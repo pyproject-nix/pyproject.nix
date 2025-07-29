@@ -6,12 +6,10 @@ readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
   "libcst",
-  "pyproject-hooks",
   "tomli; python_version < \"3.11\"",
 ]
 
 [project.scripts]
-build-editable = "build_editable:main"
 patch-editable = "patch_editable:main"
 
 [build-system]

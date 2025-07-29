@@ -6,7 +6,7 @@ pyprojectBuildEditablePhase() {
   runHook preBuild
 
   echo "Creating a wheel..."
-  env PYTHONPATH="${NIX_PYPROJECT_PYTHONPATH}:${PYTHONPATH}" @editableHook@/bin/build-editable
+  env PYTHONPATH="${NIX_PYPROJECT_PYTHONPATH}:${PYTHONPATH}" @editableHook@/bin/build-editable --dist dist
 
   runHook postBuild
   echo "Finished executing pyprojectBuildEditablePhase"

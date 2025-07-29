@@ -1,0 +1,18 @@
+[project]
+name = "build-editable"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "adisbladis", email = "adisbladis@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+build-editable = "build_editable:main"
+
+# Technically correct, but in reality we're not using any Python build system to build.
+[build-system]
+requires = ["uv_build>=0.8.2,<0.9.0"]
+build-backend = "uv_build"

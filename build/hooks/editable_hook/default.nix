@@ -9,7 +9,6 @@ let
   env = mkVirtualEnv "editable-hook-env" (
     {
       libcst = [ ];
-      pyproject-hooks = [ ];
     }
     // lib.optionalAttrs (python.pythonOlder "3.11") {
       tomli = [ ];
@@ -23,7 +22,7 @@ runCommand "editable-hook" { } ''
   cat > $out/bin/build-editable << EOF
   #!${env}/bin/python
   EOF
-  cat ${./editable_hook/build_editable.py} >> $out/bin/build-editable
+  cat ${../../editable/src/build_editable/__init__.py} >> $out/bin/build-editable
 
   cat > $out/bin/patch-editable << EOF
   #!${env}/bin/python
