@@ -15,6 +15,10 @@
       forAllSystems = lib.genAttrs lib.systems.flakeExposed;
       inherit (nixpkgs) lib;
 
+      pyproject-nix = import ./default.nix {
+        inherit lib;
+      };
+
     in
     {
       githubActions = (import npins.nix-github-actions).mkGithubMatrix {
@@ -35,12 +39,7 @@
           };
       };
 
-      build = import ./build {
-        pyproject-nix = self;
-        inherit lib;
-      };
-
-      lib = import ./lib { inherit lib; };
+      inherit (pyproject-nix) lib build;
 
       templates =
         let
@@ -178,6 +177,7 @@
             inherit self;
           };
         }
+        // pkgs.callPackages pyproject-nix.packages { }
       );
     };
 }
