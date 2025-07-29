@@ -55,7 +55,8 @@ in
 
       nativeBuildInputs = [
         pyprojectHook
-      ] ++ resolveBuildSystem (mkSpec filteredDeps.build-systems);
+      ]
+      ++ resolveBuildSystem (mkSpec filteredDeps.build-systems);
 
       meta = meta {
         inherit project;
@@ -110,8 +111,7 @@ in
       passthru = {
         # Merge runtime dependenies with build systems
         dependencies =
-          depSpec
-          // mapAttrs (name: extras: unique ((depSpec.${name} or [ ]) ++ extras)) buildSpec;
+          depSpec // mapAttrs (name: extras: unique ((depSpec.${name} or [ ]) ++ extras)) buildSpec;
         optional-dependencies = mapAttrs (_: mkSpec) filteredDeps.extras;
         dependency-groups = mapAttrs (_: mkSpec) filteredDeps.groups;
       };
@@ -120,7 +120,8 @@ in
 
       nativeBuildInputs = [
         pyprojectEditableHook
-      ] ++ resolveBuildSystem buildSpec;
+      ]
+      ++ resolveBuildSystem buildSpec;
 
       meta = meta {
         inherit project;

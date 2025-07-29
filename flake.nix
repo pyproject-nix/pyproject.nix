@@ -90,7 +90,8 @@
                 pkgs.reflex
                 self.formatter.${system}
                 pkgs.npins
-              ] ++ self.packages.${system}.doc.nativeBuildInputs;
+              ]
+              ++ self.packages.${system}.doc.nativeBuildInputs;
             };
 
         in
@@ -143,12 +144,10 @@
                 nativeBuildInputs = [
                   (pkgs.basedpyright.overrideAttrs (old: {
                     # Nixpkgs build of basedpyright is broken because of a dangling symlinks check
-                    postInstall =
-                      old.postInstall
-                      + ''
+                    postInstall = old.postInstall + ''
 
-                        find -L $out -type l -print -delete
-                      '';
+                      find -L $out -type l -print -delete
+                    '';
                   }))
                   pkgs.python3
                 ];
