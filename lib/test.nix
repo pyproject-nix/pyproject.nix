@@ -147,8 +147,7 @@ let
             inherit isLinux isDarwin;
 
             targetPlatform =
-              lib.systems.elaborate system
-              // lib.optionalAttrs isDarwin { darwinSdkVersion = "11.0"; };
+              lib.systems.elaborate system // lib.optionalAttrs isDarwin { darwinSdkVersion = "11.0"; };
 
             cc =
               if isLinux then

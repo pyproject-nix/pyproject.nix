@@ -137,14 +137,13 @@ let
             inherit (lockpkg) version;
             src = fetchurl lockpkg.src;
 
-            nativeBuildInputs =
-              [
-                # Add hook responsible for configuring, building & installing.
-                pyprojectHook
-              ]
-              # Build systems needs to be resolved since we don't propagate dependencies.
-              # Otherwise dependencies of our build-system will be missing.
-              ++ resolveBuildSystem lockpkg.build-system;
+            nativeBuildInputs = [
+              # Add hook responsible for configuring, building & installing.
+              pyprojectHook
+            ]
+            # Build systems needs to be resolved since we don't propagate dependencies.
+            # Otherwise dependencies of our build-system will be missing.
+            ++ resolveBuildSystem lockpkg.build-system;
 
             # Dependencies go in passthru to avoid polluting runtime package.
             passthru = {
