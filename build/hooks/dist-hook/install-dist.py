@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
+
+NIX_B32 = "0123456789abcdfghijklmnpqrsvwxyz"  # Nix has a bespoke base32 alphabet
+STORE_DIR = "@store_dir@"
+STORE_PREFIX = re.escape(STORE_DIR + "/") + ("[%s]{32}" % NIX_B32)
 
 
 def main():
@@ -29,15 +34,23 @@ def main():
                     "-q",
                     # zip
                     "-z",
-                    "@store_dir@",
+                    # Perl regex syntax
+                    "-P",
+                    STORE_PREFIX,
                     dist,
                 ]
             )
             if p.returncode == 0:
                 raise ValueError(f"""
                 Built distribution '{dist.name}' contains a Nix store path reference.
+                Built distributable might not be suited for distribution.
 
-                Distribution not usable.
+                Note that the wheel Nix store path scanner doesn't just pick up on build inputs,
+                but also picks up on any documentation strings and such that happens to be in the package.
+                This will sometimes result in false positives.
+
+                To skip output store path scanning override this build and add:
+                dontUsePyprojectInstallDistCheck = true;
                 """)
 
     # Copy dists to output
