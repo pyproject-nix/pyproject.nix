@@ -301,4 +301,23 @@ listToAttrs (
         env.uvBuildType = "sdist";
       });
 
+  install-dist-multiple-outputs =
+    let
+      python = pkgs.python3;
+
+      pythonSet =
+        (pkgs.callPackage pyproject-nix.build.packages {
+          inherit python;
+        }).overrideScope
+          buildSystems;
+
+      drv = pythonSet.build.overrideAttrs (_: {
+        outputs = [
+          "out"
+          "dist"
+        ];
+      });
+    in
+    drv;
+
 }
