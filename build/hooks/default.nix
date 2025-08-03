@@ -40,6 +40,11 @@ let
   # Builder commands for editable packages
   editableHook' = callPackage ./editable_hook { };
 
+  installDistScript = replaceVars ./dist-hook/install-dist.py {
+    ugrep = lib.getExe buildPackages.ugrep;
+    store_dir = builtins.storeDir;
+  };
+
 in
 {
   /*
@@ -107,7 +112,7 @@ in
         makeSetupHook {
           name = "pyproject-install-hook";
           substitutions = {
-            inherit pythonInterpreter uv;
+            inherit pythonInterpreter uv installDistScript;
           };
         } ./pyproject-install-hook.sh
       )
@@ -267,7 +272,7 @@ in
       name = "pyproject-pypa-install-hook";
       substitutions = {
         inherit (pythonPkgsBuildHost) installer;
-        inherit pythonInterpreter pythonSitePackages;
+        inherit pythonInterpreter pythonSitePackages installDistScript;
         wrapper = ./pypa-install-hook/wrapper.py;
       };
     } ./pypa-install-hook/pyproject-pypa-install-hook.sh
@@ -285,10 +290,7 @@ in
           name = "pyproject-install-dist-hook";
           substitutions = {
             inherit pythonInterpreter;
-            script = replaceVars ./dist-hook/install-dist.py {
-              ugrep = lib.getExe ugrep;
-              store_dir = builtins.storeDir;
-            };
+            script = installDistScript;
           };
         } ./dist-hook/pyproject-install-dist-hook.sh
       )

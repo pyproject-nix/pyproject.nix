@@ -14,7 +14,11 @@ def main():
     cwd = Path(os.getcwd())
     dist = cwd.joinpath("dist")
 
-    out = Path(os.environ["out"])
+    # Support installing dist into a separate "dist" output, which is preferred if it's defined.
+    try:
+        out = Path(os.environ["dist"])
+    except KeyError:
+        out = Path(os.environ["out"])
 
     check_dist: bool
     try:
