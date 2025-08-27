@@ -107,6 +107,18 @@ in
     «derivation /nix/store/g3z1zlmc0sqpd6d5ccfrx3c4w4nv5dzr-cryptography-43.0.0.drv»
     ```
 
+    # Cross-platform evaluation example: needs cargoLockHash
+
+    ```nix
+    importCargoLock {
+      prev = prev.cryptography;
+      # Lock file relative to source root
+      lockFile = "src/rust/Cargo.lock";
+      # Provide the SRI hash of the Cargo.lock file for cross-platform evaluation
+      cargoLockHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+    }
+    ```
+
     # Type
 
     ```
@@ -126,6 +138,9 @@ in
 
     lockFile
     : Path to Cargo.lock (defaults to `${cargoRoot}/Cargo.lock`)
+
+    cargoLockHash
+    : Optional SRI hash of the Cargo.lock file (enables cross-platform evaluation)
 
     doUnpack
     : Whether to unpack sources using an intermediate derivation
@@ -149,6 +164,7 @@ in
       unpackDerivationArgs ? { },
       cargoRoot ? ".",
       lockFile ? "${cargoRoot}/Cargo.lock",
+      cargoLockHash ? null,
       cargo ? pkgs.cargo,
       rustc ? pkgs.rustc,
       pkg-config ? pkgs.pkg-config,
@@ -175,13 +191,33 @@ in
             }
           );
 
+      # Determine the lock file path
+      # If cargoLockHash is provided and we need to unpack, extract just the Cargo.lock
+      # as a fixed-output derivation for cross-platform evaluation
+      actualLockFile =
+        if !doUnpack || cargoLockHash == null then
+          # Use the lock file from src (either local path or unpacked archive)
+          if lib.hasPrefix "/" lockFile then lockFile else "${src}/${lockFile}"
+        else
+          # Create fixed-output derivation for just the Cargo.lock file
+          # Use pkgsBuildHost to ensure this runs on the build platform
+          pkgs.pkgsBuildHost.runCommand "${prev.src.name}-cargo-lock"
+            {
+              outputHash = cargoLockHash;
+              outputHashMode = "flat";
+              nativeBuildInputs = with pkgs.pkgsBuildHost; [ gnutar gzip bzip2 xz ];
+            }
+            ''
+              tar -xaf ${prev.src} --to-stdout --wildcards --no-wildcards-match-slash "*/${lib.removePrefix "./" lockFile}" >"$out" && test -s "$out"
+            '';
+
     in
     assert isDerivation prev;
     prev.overrideAttrs (old: {
       inherit cargoRoot src;
       cargoDeps = pkgs.rustPlatform.importCargoLock (
         {
-          lockFile = "${src}/${lockFile}";
+          lockFile = actualLockFile;
         }
         // importCargoLockArgs
       );
