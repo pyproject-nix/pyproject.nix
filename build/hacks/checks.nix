@@ -102,4 +102,30 @@ in
       ln -s ${venv} $out
     '';
 
+  toNixpkgs =
+    let
+      overlay = hacks.toNixpkgs {
+        inherit pythonSet;
+        packages = [
+          "pip" # Testing dependencies
+          "urllib3" # Testing optional-dependencies
+        ];
+      };
+
+      python = pkgs.python3.override {
+        packageOverrides = overlay;
+        self = python;
+      };
+
+      pythonEnv = python.withPackages (ps: [
+        ps.urllib3
+        ps.pip
+      ]);
+    in
+    assert pkgs.python3.pkgs.urllib3 != python.pkgs.urllib3;
+    assert pkgs.python3.pkgs.pip != python.pkgs.pip;
+    pkgs.runCommand "toNixpkgs-check" { } ''
+      ${pythonEnv}/bin/python -c 'import urllib3'
+      ${pythonEnv}/bin/pip --version > $out
+    '';
 }
