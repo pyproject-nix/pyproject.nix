@@ -2,7 +2,17 @@
 
 let
   inherit (pkgs) stdenv;
-  inherit (lib) isDerivation isAttrs;
+  inherit (lib) isDerivation isAttrs listToAttrs;
+  inherit (builtins)
+    concatMap
+    elem
+    attrNames
+    mapAttrs
+    isFunction
+    isList
+    typeOf
+    filter
+    ;
 
 in
 {
@@ -192,4 +202,160 @@ in
         rustc
       ];
     });
+
+  /**
+    Create a nixpkgs Python (buildPythonPackage) compatible package from a pyproject.nix build package.
+
+    Adapts a package by:
+    - Activating a wheel output, if not already enabled
+    - Create a package using generated wheel as input
+
+    Note: toNixpkgs is still experimental and subject to change.
+
+    # Example
+
+    ```nix
+    toNixpkgs {
+      inherit pythonSet;
+      packages = [ "requests" ];
+    }
+    =>
+    «lambda @ /nix/store/f05hjk9fh1m5py5j1ixzly07p4lla56x-source/build/hacks/default.nix:263:5»
+    ```
+
+    # Type
+
+    ```
+    nixpkgsPrebuilt :: AttrSet -> derivation
+    ```
+
+    # Arguments
+
+    pythonSet
+    : Pyproject.nix build Python package set
+
+    packages
+    : List/predicate of overlay member packages
+  */
+  toNixpkgs =
+    let
+      # Always filter out when generating set
+      wellKnown = [
+        "python"
+        "pkgs"
+        "stdenv"
+        "pythonPkgsBuildHost"
+        "resolveBuildSystem"
+        "resolveVirtualEnv"
+        "mkVirtualEnv"
+        "hooks"
+      ];
+    in
+    {
+      pythonSet,
+      packages ? null,
+    }:
+    let
+      packages' =
+        if (packages == null || isFunction packages) then
+          (
+            let
+              hookNames = attrNames pythonSet.hooks;
+              predicate = if packages == null then (_: true) else packages;
+            in
+            filter (name: !elem name wellKnown && !elem name hookNames && predicate name) (attrNames pythonSet)
+          )
+        else if isList packages then
+          packages
+        else
+          throw "Unhandled packages type: ${typeOf packages}";
+
+      # Ensure wheel artifacts are created for all packages we are generating from
+      pythonSet' = pythonSet.overrideScope (
+        _final: prev:
+        listToAttrs (
+          map (
+            name:
+            let
+              drv = prev.${name};
+            in
+            {
+              inherit name;
+              value =
+                if elem "dist" (drv.outputs or [ ]) then
+                  drv
+                else
+                  drv.overrideAttrs (old: {
+                    outputs = (old.outputs or [ "out" ]) ++ [ "dist" ];
+                  });
+            }
+          ) packages'
+        )
+      );
+    in
+    pythonPackagesFinal: _pythonPackagesPrev:
+    let
+      inherit (pythonPackagesFinal) buildPythonPackage pkgs;
+      inherit (pkgs) autoPatchelfHook;
+    in
+    listToAttrs (
+      map (
+        name:
+        let
+          from = pythonSet'.${name};
+          dependencies = from.passthru.dependencies or { };
+          optional-dependencies = from.passthru.optional-dependencies or { };
+        in
+        {
+          inherit name;
+          value = buildPythonPackage {
+            inherit (from) pname version;
+            src = from.dist;
+
+            format = "wheel";
+            dontBuild = true;
+
+            # Default wheelUnpackPhase assumes we are passing a single wheel, but we are passing a dist dir
+            unpackPhase = ''
+              runHook preUnpack
+              mkdir dist
+              cp ${from.dist}/* dist/
+              # runHook postUnpack # Calls find...?
+            '';
+
+            # Include any buildInputs from build for autoPatchelfHook
+            buildInputs = from.buildInputs or [ ];
+
+            nativeBuildInputs = lib.optional stdenv.isLinux [
+              autoPatchelfHook
+            ];
+
+            propagatedBuildInputs = concatMap (
+              name:
+              let
+                pkg = pythonPackagesFinal.${name};
+                extras = dependencies.${name};
+              in
+              [ pkg ] ++ concatMap (extra: pkg.optional-dependencies.${extra}) extras
+            ) (attrNames dependencies);
+
+            passthru = {
+              optional-dependencies = mapAttrs (
+                name: dependencies:
+                concatMap (
+                  name:
+                  let
+                    pkg = pythonPackagesFinal.${name};
+                    extras = dependencies.${name};
+                  in
+                  [ pkg ] ++ concatMap (extra: pkg.optional-dependencies.${extra}) extras
+                ) (attrNames dependencies)
+              ) optional-dependencies;
+            };
+
+            # Note: PEP-735 dependency groups are dropped as nixpkgs lacks support.
+          };
+        }
+      ) packages'
+    );
 }
