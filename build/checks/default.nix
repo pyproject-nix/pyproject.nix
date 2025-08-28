@@ -52,6 +52,12 @@ let
     in
 
     {
+      setuptools-scm = pythonSet.setuptools-scm.overrideAttrs (old: {
+        passthru = old.passthru // {
+          inherit pythonSet;
+        };
+      });
+
       make-venv =
         pkgs.runCommand "venv-run-build-test"
           {
