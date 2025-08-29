@@ -2,7 +2,13 @@
 
 let
   inherit (pkgs) stdenv;
-  inherit (lib) isDerivation isAttrs;
+  inherit (lib) isDerivation isAttrs listToAttrs;
+  inherit (builtins)
+    concatMap
+    elem
+    attrNames
+    mapAttrs
+    ;
 
 in
 {
@@ -192,4 +198,128 @@ in
         rustc
       ];
     });
+
+  /**
+    Create a nixpkgs Python (buildPythonPackage) compatible package from a pyproject.nix build package.
+
+    Adapts a package by:
+    - Activating a wheel output, if not already enabled
+    - Create a package using generated wheel as input
+
+    # Example
+
+    ```nix
+    toNixpkgs {
+      inherit pythonSet;
+      packages = [ "requests" ];
+    }
+    =>
+    «lambda @ /nix/store/f05hjk9fh1m5py5j1ixzly07p4lla56x-source/build/hacks/default.nix:263:5»
+    ```
+
+    # Type
+
+    ```
+    nixpkgsPrebuilt :: AttrSet -> derivation
+    ```
+
+    # Arguments
+
+    pythonSet
+    : Pyproject.nix build Python package set
+
+    packages
+    : List of packages to generate overlay with
+  */
+  toNixpkgs =
+    {
+      pythonSet,
+      packages,
+    }:
+    let
+      # Ensure wheel artifacts are created for all packages we are generating from
+      pythonSet' = pythonSet.overrideScope (
+        _final: prev:
+        listToAttrs (
+          map (
+            name:
+            let
+              drv = prev.${name};
+            in
+            {
+              inherit name;
+              value =
+                if elem "dist" (drv.outputs or [ ]) then
+                  drv
+                else
+                  drv.overrideAttrs (old: {
+                    outputs = (old.outputs or [ "out" ]) ++ [ "dist" ];
+                  });
+            }
+          ) packages
+        )
+      );
+    in
+    pythonPackagesFinal: _pythonPackagesPrev:
+    let
+      inherit (pythonPackagesFinal) python buildPythonPackage pkgs;
+      inherit (pkgs) autoPatchelfHook;
+    in
+    listToAttrs (
+      map (
+        name:
+        let
+          from = pythonSet'.${name};
+        in
+        {
+          inherit name;
+          value = buildPythonPackage {
+            inherit (from) pname version;
+            src = from.dist;
+
+            format = "wheel";
+
+            # Default wheelUnpackPhase assumes we are passing a single wheel, but we are passing a dist dir
+            unpackPhase = ''
+              runHook preUnpack
+              mkdir dist
+              cp ${from.dist}/* dist/
+              # runHook postUnpack # Calls find...?
+            '';
+
+            # Include any buildInputs from build for autoPatchelfHook
+            buildInputs = from.buildInputs or [ ];
+
+            nativeBuildInputs = lib.optional stdenv.isLinux [
+              autoPatchelfHook
+            ];
+
+            propagatedBuildInputs =
+              let
+                # Dependencies as a list of strings
+                dependencies = concatMap (
+                  pkg:
+                  let
+                    deps = pythonSet.${pkg}.passthru.dependencies or { };
+                  in
+                  concatMap (name: [ name ] ++ deps.${name}) (attrNames deps)
+                ) packages;
+              in
+              map (dep: python.pkgs.${dep}) dependencies;
+
+            passthru = {
+              optional-dependencies = mapAttrs (
+                _: deps:
+                let
+                  dependencies = concatMap (name: [ name ] ++ deps.${name}) (attrNames deps);
+                in
+                map (dep: python.pkgs.${dep}) dependencies
+              ) (from.passthru.optional-dependencies or { });
+            };
+
+            # Note: PEP-735 dependency groups are dropped as nixpkgs lacks support.
+          };
+        }
+      ) packages
+    );
 }
