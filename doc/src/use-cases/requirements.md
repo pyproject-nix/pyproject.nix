@@ -7,5 +7,5 @@ This example loads `requirements.txt` to create an environment using [`python.wi
 ## flake.nix
 
 ```nix
-{{#include ../../../templates/requirements-txt/flake.nix}}
+{{#include ./requirements/flake.nix}}
 ```

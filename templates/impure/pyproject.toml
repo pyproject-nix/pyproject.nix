@@ -1,7 +1,7 @@
 [project]
-name = "hello-python"
+name = "impure-package"
 version = "0.1.0"
-description = "A minimal pyproject.toml"
+description = "Add your description here"
 authors = [ ]
 requires-python = ">=3.13"
 dependencies = []

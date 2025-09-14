@@ -17,6 +17,9 @@
     - [hacks](./builders/hacks.md)
   - [ecosystem](./builders/ecosystem.md)
 
+# [Templates](./templates.md)
+- [Flake Templates](./templates.md)
+
 # Meta
 - [FAQ](./FAQ.md)
 
