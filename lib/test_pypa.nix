@@ -512,8 +512,8 @@ in
       testZmqCPythonDarwin311 = mkTest {
         input = zmqWheels;
         output = [
-          "pyzmq-24.0.1-cp311-cp311-macosx_10_15_universal2.whl"
           "pyzmq-24.0.1-cp311-cp311-macosx_10_9_x86_64.whl"
+          "pyzmq-24.0.1-cp311-cp311-macosx_10_15_universal2.whl"
         ];
         python = mocks.cpythonDarwin311;
       };
