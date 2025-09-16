@@ -32,6 +32,8 @@ let
   # PEP-625 only specifies .tar.gz as valid extension but .zip is also fairly widespread.
   matchSdistFileName = match "([^-]+)-(.+)(\.tar\.gz|\.zip)";
 
+  matchMacosTag = match "macosx_([0-9]+)_([0-9]+)_(.+)";
+
   # Tag normalization documented in
   # https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/#details
   normalizedImpls = {
@@ -275,7 +277,7 @@ lib.fix (self: {
     else if hasPrefix "macosx" platformTag then
       (
         let
-          m = match "macosx_([0-9]+)_([0-9]+)_(.+)" platformTag;
+          m = matchMacosTag platformTag;
           major = elemAt m 0;
           minor = elemAt m 1;
           arch = elemAt m 2;
@@ -476,7 +478,6 @@ lib.fix (self: {
             languageTags = filter isPythonTagCompatible file.languageTags;
             # Extract the tag as a number. E.g. "37" is `toInt "37"` and "none"/"any" is 0
             languageTags' = map (tag: if tag == "none" then 0 else toInt tag.version) languageTags;
-
           in
           {
             bestLanguageTag = head (sort (x: y: x > y) languageTags');
@@ -485,6 +486,20 @@ lib.fix (self: {
               && length languageTags > 0
               && lib.any (self.isPlatformTagCompatible platform python.stdenv.cc.libc) file.platformTags;
             inherit file;
+            # Prefer macOS wheels with specific architectures over universal2
+            macArchPreference =
+              let
+                macArchs = filter isString (
+                  map (
+                    tag:
+                    let
+                      m = matchMacosTag tag;
+                    in
+                    if m != null then elemAt m 2 else null
+                  ) file.platformTags
+                );
+              in
+              if any (arch: arch != "universal2") macArchs then 1 else 0;
           }
         ) files;
 
@@ -498,6 +513,7 @@ lib.fix (self: {
           || x.file.version > y.file.version
           || (x.file.buildTag != null && (y.file.buildTag == null || x.file.buildTag > y.file.buildTag))
           || x.bestLanguageTag > y.bestLanguageTag
+          || x.macArchPreference > y.macArchPreference
         ) compatibleFiles;
 
       in
