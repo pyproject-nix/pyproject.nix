@@ -16,6 +16,7 @@ let
     sort
     head
     elem
+    any
     ;
   inherit (lib)
     isString
@@ -103,9 +104,7 @@ lib.fix (self: {
     `string -> AttrSet`
     ```
   */
-  parseABITag = tag: {
-    inherit tag; # Verbatim tag
-  };
+  parseABITag = tag: tag; # Verbatim tag
 
   /**
     Check whether string is a sdist file or not.
@@ -165,11 +164,7 @@ lib.fix (self: {
      parseFileName "cryptography-41.0.1-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
      ->
      {
-      abiTag = {  # Parsed by pypa.parseABITag
-        implementation = "abi";
-        version = "3";
-        rest = "";
-      };
+      abiTags = [ "abi3" ];
       buildTag = null;
       distribution = "cryptography";
       languageTags = [  # Parsed by pypa.parsePythonTag
@@ -195,7 +190,7 @@ lib.fix (self: {
       version = elemAt m 1;
       buildTag = elemAt m 3;
       languageTags = map self.parsePythonTag (filter isString (split "\\." (elemAt m 4)));
-      abiTag = self.parseABITag (elemAt m 5);
+      abiTags = filter isString (split "\\." (elemAt m 5));
       platformTags = filter isString (split "\\." (elemAt m 6));
       # Keep filename around so selectWheel & such that returns structured filtered
       # data becomes more ergonomic to use
@@ -249,7 +244,7 @@ lib.fix (self: {
             "any"
           ];
     in
-    tag: elem tag.tag abiTags;
+    tag: elem tag abiTags;
 
   /**
     Check whether a platform tag is compatible with this python interpreter.
@@ -434,9 +429,9 @@ lib.fix (self: {
     # The parsed wheel filename
     file:
     (
-      isABITagCompatible file.abiTag
-      && lib.any (self.isPythonTagCompatible python) file.languageTags
-      && lib.any (self.isPlatformTagCompatible platform libc) file.platformTags
+      any isABITagCompatible file.abiTags
+      && any (self.isPythonTagCompatible python) file.languageTags
+      && any (self.isPlatformTagCompatible platform libc) file.platformTags
     );
 
   /**
@@ -475,7 +470,7 @@ lib.fix (self: {
         withSortedTags = map (
           file:
           let
-            abiCompatible = isABITagCompatible file.abiTag;
+            abiCompatible = any isABITagCompatible file.abiTags;
 
             # Filter only compatible tags
             languageTags = filter isPythonTagCompatible file.languageTags;

@@ -56,16 +56,12 @@ in
   parseABITag = {
     testWithFlags = {
       expr = parseABITag "cp37dmu";
-      expected = {
-        tag = "cp37dmu";
-      };
+      expected = "cp37dmu";
     };
 
     testWithPypyFlags = {
       expr = parseABITag "pypy38_pp73";
-      expected = {
-        tag = "pypy38_pp73";
-      };
+      expected = "pypy38_pp73";
     };
   };
 
@@ -73,9 +69,7 @@ in
     testSimple = {
       expr = parseWheelFileName "distribution-1.0-1-py27-none-any.whl";
       expected = {
-        abiTag = {
-          tag = "none";
-        };
+        abiTags = [ "none" ];
         buildTag = "1";
         distribution = "distribution";
         languageTags = [
@@ -93,9 +87,7 @@ in
     testComplex = {
       expr = parseWheelFileName "cryptography-41.0.1-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl";
       expected = {
-        abiTag = {
-          tag = "abi3";
-        };
+        abiTags = [ "abi3" ];
         buildTag = null;
         distribution = "cryptography";
         languageTags = [
@@ -116,9 +108,7 @@ in
     testMultipleLanguageTags = {
       expr = parseWheelFileName "Werkzeug-1.0.0-py2.py3-none-any.whl";
       expected = {
-        abiTag = {
-          tag = "none";
-        };
+        abiTags = [ "none" ];
         buildTag = null;
         distribution = "Werkzeug";
         languageTags = [
