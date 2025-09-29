@@ -19,7 +19,6 @@ let
             version
             src
             meta
-            postPatch
             ;
 
           passthru.dependencies = {
