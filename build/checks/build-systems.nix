@@ -687,6 +687,74 @@ let
             setuptools = [ ];
           };
         };
+
+      hatch-vcs =
+        {
+          stdenv,
+          python3Packages,
+          pyprojectHook,
+          resolveBuildSystem,
+        }:
+        stdenv.mkDerivation {
+          inherit (python3Packages.hatch-vcs)
+            pname
+            version
+            src
+            meta
+            ;
+
+          nativeBuildInputs = [
+            pyprojectHook
+          ]
+          ++ resolveBuildSystem {
+            hatchling = [ ];
+          };
+        };
+
+      # Package urllib3 for testing hacks.toNixpkgs.
+      # This is a simple dependency that we can test both dependencies & optional-dependencies with.
+      urllib3 =
+        {
+          stdenv,
+          python3Packages,
+          pyprojectHook,
+          resolveBuildSystem,
+        }:
+        stdenv.mkDerivation {
+          inherit (python3Packages.urllib3)
+            pname
+            version
+            src
+            meta
+            ;
+
+          passthru = {
+            optional-dependencies = {
+              brotli = {
+                brotli = [ ];
+              };
+              zstd = {
+                zstandard = [ ];
+              };
+              socks = {
+                PySocks = [ ];
+              };
+              h2 = {
+                h2 = [ ];
+              };
+            };
+          };
+
+          nativeBuildInputs = [
+            pyprojectHook
+          ]
+          ++ resolveBuildSystem {
+            hatchling = [ ];
+            hatch-vcs = [ ];
+            setuptools-scm = [ ];
+          };
+        };
+
     };
 
   crossOverlay = lib.composeExtensions (_final: prev: {
