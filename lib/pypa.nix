@@ -216,35 +216,38 @@ lib.fix (self: {
     # Python interpreter derivation
     python:
     let
-      inherit (python.passthru) sourceVersion implementation pythonVersion;
-
-      # TODO: Implement ABI tags in the nixpkgs Python derivation.
-      #
-      # This isn't strictly correct in the face of things like Python free-threading
-      # which has a `t` suffix but there is no way right now to introspect & check
-      # if the GIL is enabled or not.
-      #
-      # So a free-threaded build will erroneously be returned as compatible with
-      # regular CPython wheels.
       abiTags =
-        if implementation == "cpython" then
-          [
-            "none"
-            "any"
-            "abi3"
-            "cp${sourceVersion.major}${sourceVersion.minor}"
-          ]
-        else if implementation == "pypy" then
-          [
-            "none"
-            "any"
-            "pypy${concatStrings (take 2 (splitString "." pythonVersion))}_pp${sourceVersion.major}${sourceVersion.minor}"
-          ]
-        else
-          [
-            "none"
-            "any"
-          ];
+        python.passthru.pythonABITags or (
+          # Fall back to computing an ABI tag.
+          #
+          # This isn't strictly correct in the face of things like Python free-threading
+          # which has a `t` suffix but there is no way right now to introspect & check
+          # if the GIL is enabled or not.
+          #
+          # So a free-threaded build will erroneously be returned as compatible with
+          # regular CPython wheels.
+          let
+            inherit (python.passthru) sourceVersion implementation pythonVersion;
+          in
+          if implementation == "cpython" then
+            [
+              "none"
+              "any"
+              "abi3"
+              "cp${sourceVersion.major}${sourceVersion.minor}"
+            ]
+          else if implementation == "pypy" then
+            [
+              "none"
+              "any"
+              "pypy${concatStrings (take 2 (splitString "." pythonVersion))}_pp${sourceVersion.major}${sourceVersion.minor}"
+            ]
+          else
+            [
+              "none"
+              "any"
+            ]
+        );
     in
     tag: elem tag abiTags;
 
