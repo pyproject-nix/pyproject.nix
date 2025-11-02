@@ -336,7 +336,12 @@ in
                 pkg = pythonPackagesFinal.${name};
                 extras = dependencies.${name};
               in
-              [ pkg ] ++ concatMap (extra: pkg.optional-dependencies.${extra}) extras
+              [ pkg ]
+              ++ concatMap (
+                extra:
+                # Note: The fallback or [ ] is because nixpkgs often lacks optional-dependencies metadata.
+                pkg.optional-dependencies.${extra} or [ ]
+              ) extras
             ) (attrNames dependencies);
 
             passthru = {
@@ -348,7 +353,7 @@ in
                     pkg = pythonPackagesFinal.${name};
                     extras = dependencies.${name};
                   in
-                  [ pkg ] ++ concatMap (extra: pkg.optional-dependencies.${extra}) extras
+                  [ pkg ] ++ concatMap (extra: pkg.optional-dependencies.${extra} or [ ]) extras
                 ) (attrNames dependencies)
               ) optional-dependencies;
             };
