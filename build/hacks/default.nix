@@ -330,6 +330,9 @@ in
               autoPatchelfHook
             ];
 
+            ${if from ? autoPatchelfIgnoreMissingDeps then "autoPatchelfIgnoreMissingDeps" else null} =
+              from.autoPatchelfIgnoreMissingDeps;
+
             propagatedBuildInputs = concatMap (
               name:
               let
