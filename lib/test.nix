@@ -228,6 +228,7 @@ fix (self: {
   scripts = importTests ./test_scripts.nix;
   poetry = importTests ./test_poetry.nix;
   eggs = importTests ./test_eggs.nix;
+  util = importTests ./test_util.nix;
 
   pep440 = importTests ./test_pep440.nix;
   pep508 = importTests ./test_pep508.nix;
