@@ -29,7 +29,7 @@ in
 
   filterPythonInterpreters =
     {
-      requires,
+      requires-python,
       pythonInterpreters,
       pre ? false,
       implementation ? "cpython",
@@ -50,7 +50,7 @@ in
             !(hasSuffix "prebuilt" name || hasSuffix "Minimal" name)
           && (drv.implementation or "") == implementation
           && (pre || version.pre == null)
-          && all (cond: pep440.comparators.${cond.op} pythonVersion cond.version) requires
+          && all (cond: pep440.comparators.${cond.op} pythonVersion cond.version) requires-python
         )
       then
         [ drv ]

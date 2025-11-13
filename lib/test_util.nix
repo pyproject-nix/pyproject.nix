@@ -39,7 +39,7 @@
     in {
       testSimple = {
         expr = map toString (util.filterPythonInterpreters {
-          requires = pep440.parseVersionConds ">=3.12";
+          requires-python = pep440.parseVersionConds ">=3.12";
           inherit pythonInterpreters;
         });
         expected = map toString [
