@@ -25,7 +25,7 @@ lib.fix (
       concatStringsSep
       ;
     inherit (lib) optionalAttrs concatLists;
-    inherit (import ./util.nix { inherit lib; }) splitComma;
+    inherit (import ./lib.nix { inherit lib; }) splitComma;
 
     # Translate author from a string like "Name <email>" to a structured set as defined by PEP-621.
     translateAuthor =

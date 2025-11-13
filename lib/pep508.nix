@@ -37,7 +37,7 @@ let
     take
     toInt
     ;
-  inherit (import ./util.nix { inherit lib; }) splitComma stripStr;
+  inherit (import ./lib.nix { inherit lib; }) splitComma stripStr;
 
   # Marker fields + their parsers
   markerFields =
