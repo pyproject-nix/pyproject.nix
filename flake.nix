@@ -100,6 +100,8 @@
                 pkgs.hivemind
                 pkgs.reflex
                 self.formatter.${system}
+                pkgs.rustc
+                pkgs.cargo
               ]
               ++ self.packages.${system}.doc.nativeBuildInputs;
             };

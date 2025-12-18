@@ -49,6 +49,29 @@ let
 
       testEnviron = pyproject-nix.lib.pep508.mkEnviron python;
 
+      # A test set with myapp added
+      testSet = pythonSet.pythonPkgsHostHost.overrideScope (
+        final: _prev: {
+          myapp = final.callPackage (
+            {
+              stdenv,
+              pyprojectHook,
+              resolveBuildSystem,
+            }:
+            stdenv.mkDerivation (
+              renderers.mkDerivation
+                {
+                  project = myapp;
+                  environ = testEnviron;
+                }
+                {
+                  inherit pyprojectHook resolveBuildSystem;
+                }
+            )
+          ) { };
+        }
+      );
+
     in
 
     {
@@ -132,28 +155,6 @@ let
 
       mkderivation =
         let
-          testSet = pythonSet.pythonPkgsHostHost.overrideScope (
-            final: _prev: {
-              myapp = final.callPackage (
-                {
-                  stdenv,
-                  pyprojectHook,
-                  resolveBuildSystem,
-                }:
-                stdenv.mkDerivation (
-                  renderers.mkDerivation
-                    {
-                      project = myapp;
-                      environ = testEnviron;
-                    }
-                    {
-                      inherit pyprojectHook resolveBuildSystem;
-                    }
-                )
-              ) { };
-            }
-          );
-
           venv = testSet.mkVirtualEnv "render-mkderivation-env" {
             myapp = [
               "toml" # Extra
@@ -174,6 +175,20 @@ let
           touch $out
         '';
 
+      # Test ctypes linking by checking that the build output
+      # contains a `libc = "/nix/store..."`
+      link-ctypes =
+        let
+          drv = testSet.myapp.overrideAttrs(old: {
+            nativeBuildInputs = old.nativeBuildInputs ++ [
+              pythonSet.hooks.pyprojectLinkCtypesHook
+            ];
+          });
+        in
+        pkgs.runCommand "link-ctypes-test" { } ''
+          grep "libc =" "${drv}/${python.sitePackages}/myapp/__init__.py" | grep '${builtins.storeDir}' > /dev/null
+          touch $out
+        '';
     }
     // lib.optionalAttrs (!(python.pythonOlder "3.12" && python.stdenv.isDarwin)) {
       # Fails on Darwin, but only on Python <3.12:
