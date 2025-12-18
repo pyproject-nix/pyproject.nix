@@ -1,0 +1,14 @@
+[package]
+name = "link-ctypes"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ruff_python_ast = { git = "https://github.com/astral-sh/ruff.git", tag = "0.14.9" }
+ruff_python_parser = { git = "https://github.com/astral-sh/ruff.git", tag = "0.14.9" }
+ruff_text_size = { git = "https://github.com/astral-sh/ruff.git", tag = "0.14.9" }
+regex = "1.10"
+tempfile = "3.8"
+which = "8.0"
+walkdir = "2.0"
+memoize = "0.5.1"
