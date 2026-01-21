@@ -47,7 +47,7 @@ in
             "Extra/group name '${name'}' does not match either extra or dependency group in package ${pkg.pname}"
             concatMap
             (name: recurse name extra'.${name})
-            (attrNames extra')
+            (if extra' != null then (attrNames extra') else [ ])
           ++ concatMap (name: recurse name group'.${name}) (
             if group' != null then (attrNames group') else [ ]
           )
