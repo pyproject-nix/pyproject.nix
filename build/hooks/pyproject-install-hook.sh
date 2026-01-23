@@ -17,7 +17,7 @@ pyprojectInstallPhase() {
   rm -f "$out/.lock"
 
   # If a dist output is defined also install the wheel build product in a separate dist output
-  if [[ "$dist" != "" ]]; then
+  if [[ $dist != "" ]]; then
     @pythonInterpreter@ @installDistScript@
     rm -f "$dist/.lock"
   fi

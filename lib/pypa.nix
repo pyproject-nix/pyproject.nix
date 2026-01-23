@@ -16,6 +16,7 @@ let
     sort
     head
     elem
+    any
     ;
   inherit (lib)
     isString
@@ -30,6 +31,8 @@ let
 
   # PEP-625 only specifies .tar.gz as valid extension but .zip is also fairly widespread.
   matchSdistFileName = match "([^-]+)-(.+)(\.tar\.gz|\.zip)";
+
+  matchMacosTag = match "macosx_([0-9]+)_([0-9]+)_(.+)";
 
   # Tag normalization documented in
   # https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/#details
@@ -103,9 +106,7 @@ lib.fix (self: {
     `string -> AttrSet`
     ```
   */
-  parseABITag = tag: {
-    inherit tag; # Verbatim tag
-  };
+  parseABITag = tag: tag; # Verbatim tag
 
   /**
     Check whether string is a sdist file or not.
@@ -165,11 +166,7 @@ lib.fix (self: {
      parseFileName "cryptography-41.0.1-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
      ->
      {
-      abiTag = {  # Parsed by pypa.parseABITag
-        implementation = "abi";
-        version = "3";
-        rest = "";
-      };
+      abiTags = [ "abi3" ];
       buildTag = null;
       distribution = "cryptography";
       languageTags = [  # Parsed by pypa.parsePythonTag
@@ -195,7 +192,7 @@ lib.fix (self: {
       version = elemAt m 1;
       buildTag = elemAt m 3;
       languageTags = map self.parsePythonTag (filter isString (split "\\." (elemAt m 4)));
-      abiTag = self.parseABITag (elemAt m 5);
+      abiTags = filter isString (split "\\." (elemAt m 5));
       platformTags = filter isString (split "\\." (elemAt m 6));
       # Keep filename around so selectWheel & such that returns structured filtered
       # data becomes more ergonomic to use
@@ -219,37 +216,40 @@ lib.fix (self: {
     # Python interpreter derivation
     python:
     let
-      inherit (python.passthru) sourceVersion implementation pythonVersion;
-
-      # TODO: Implement ABI tags in the nixpkgs Python derivation.
-      #
-      # This isn't strictly correct in the face of things like Python free-threading
-      # which has a `t` suffix but there is no way right now to introspect & check
-      # if the GIL is enabled or not.
-      #
-      # So a free-threaded build will erroneously be returned as compatible with
-      # regular CPython wheels.
       abiTags =
-        if implementation == "cpython" then
-          [
-            "none"
-            "any"
-            "abi3"
-            "cp${sourceVersion.major}${sourceVersion.minor}"
-          ]
-        else if implementation == "pypy" then
-          [
-            "none"
-            "any"
-            "pypy${concatStrings (take 2 (splitString "." pythonVersion))}_pp${sourceVersion.major}${sourceVersion.minor}"
-          ]
-        else
-          [
-            "none"
-            "any"
-          ];
+        python.passthru.pythonABITags or (
+          # Fall back to computing an ABI tag.
+          #
+          # This isn't strictly correct in the face of things like Python free-threading
+          # which has a `t` suffix but there is no way right now to introspect & check
+          # if the GIL is enabled or not.
+          #
+          # So a free-threaded build will erroneously be returned as compatible with
+          # regular CPython wheels.
+          let
+            inherit (python.passthru) sourceVersion implementation pythonVersion;
+          in
+          if implementation == "cpython" then
+            [
+              "none"
+              "any"
+              "abi3"
+              "cp${sourceVersion.major}${sourceVersion.minor}"
+            ]
+          else if implementation == "pypy" then
+            [
+              "none"
+              "any"
+              "pypy${concatStrings (take 2 (splitString "." pythonVersion))}_pp${sourceVersion.major}${sourceVersion.minor}"
+            ]
+          else
+            [
+              "none"
+              "any"
+            ]
+        );
     in
-    tag: elem tag.tag abiTags;
+    tag: elem tag abiTags;
 
   /**
     Check whether a platform tag is compatible with this python interpreter.
@@ -280,7 +280,7 @@ lib.fix (self: {
     else if hasPrefix "macosx" platformTag then
       (
         let
-          m = match "macosx_([0-9]+)_([0-9]+)_(.+)" platformTag;
+          m = matchMacosTag platformTag;
           major = elemAt m 0;
           minor = elemAt m 1;
           arch = elemAt m 2;
@@ -434,9 +434,9 @@ lib.fix (self: {
     # The parsed wheel filename
     file:
     (
-      isABITagCompatible file.abiTag
-      && lib.any (self.isPythonTagCompatible python) file.languageTags
-      && lib.any (self.isPlatformTagCompatible platform libc) file.platformTags
+      any isABITagCompatible file.abiTags
+      && any (self.isPythonTagCompatible python) file.languageTags
+      && any (self.isPlatformTagCompatible platform libc) file.platformTags
     );
 
   /**
@@ -475,13 +475,12 @@ lib.fix (self: {
         withSortedTags = map (
           file:
           let
-            abiCompatible = isABITagCompatible file.abiTag;
+            abiCompatible = any isABITagCompatible file.abiTags;
 
             # Filter only compatible tags
             languageTags = filter isPythonTagCompatible file.languageTags;
             # Extract the tag as a number. E.g. "37" is `toInt "37"` and "none"/"any" is 0
             languageTags' = map (tag: if tag == "none" then 0 else toInt tag.version) languageTags;
-
           in
           {
             bestLanguageTag = head (sort (x: y: x > y) languageTags');
@@ -490,6 +489,20 @@ lib.fix (self: {
               && length languageTags > 0
               && lib.any (self.isPlatformTagCompatible platform python.stdenv.cc.libc) file.platformTags;
             inherit file;
+            # Prefer macOS wheels with specific architectures over universal2
+            macArchPreference =
+              let
+                macArchs = filter isString (
+                  map (
+                    tag:
+                    let
+                      m = matchMacosTag tag;
+                    in
+                    if m != null then elemAt m 2 else null
+                  ) file.platformTags
+                );
+              in
+              if any (arch: arch != "universal2") macArchs then 1 else 0;
           }
         ) files;
 
@@ -503,6 +516,7 @@ lib.fix (self: {
           || x.file.version > y.file.version
           || (x.file.buildTag != null && (y.file.buildTag == null || x.file.buildTag > y.file.buildTag))
           || x.bestLanguageTag > y.bestLanguageTag
+          || x.macArchPreference > y.macArchPreference
         ) compatibleFiles;
 
       in

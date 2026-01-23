@@ -7,7 +7,7 @@ This example loads `pyproject.toml` to create an environment using [`python.with
 ## flake.nix
 
 ```nix
-{{#include ../../../templates/pyproject/flake.nix}}
+{{#include ./pyproject/flake.nix}}
 ```
 
 ## pyproject.toml

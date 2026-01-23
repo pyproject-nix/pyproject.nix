@@ -17,6 +17,9 @@
     - [hacks](./builders/hacks.md)
   - [ecosystem](./builders/ecosystem.md)
 
+# [Templates](./templates.md)
+- [Flake Templates](./templates.md)
+
 # Meta
 - [FAQ](./FAQ.md)
 
@@ -28,6 +31,7 @@
   - [nixpkgs](./nixpkgs-build.md)
     - [renderers](./lib/renderers.md)
     - [validators](./lib/validators.md)
+  - [util](./lib/util.md)
 - [Standards APIs](./reference-std.md)
   - [pep440](./lib/pep440.md)
   - [pep508](./lib/pep508.md)
