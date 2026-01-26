@@ -89,6 +89,8 @@
                 pkgs.reflex
                 self.formatter.${system}
                 pkgs.npins
+                pkgs.rustc
+                pkgs.cargo
               ]
               ++ self.packages.${system}.doc.nativeBuildInputs;
             };
