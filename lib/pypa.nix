@@ -30,7 +30,7 @@ let
   matchWheelFileName = match "([^-]+)-([^-]+)(-([[:digit:]][^-]*))?-([^-]+)-([^-]+)-(.+).whl";
 
   # PEP-625 only specifies .tar.gz as valid extension but .zip is also fairly widespread.
-  matchSdistFileName = match "([^-]+)-(.+)(\.tar\.gz|\.zip)";
+  matchSdistFileName = match "([^-]+)-(.+)(\\.tar\\.gz|\\.zip)";
 
   matchMacosTag = match "macosx_([0-9]+)_([0-9]+)_(.+)";
 
@@ -65,7 +65,7 @@ lib.fix (self: {
   normalizePackageName =
     let
       concatDash = concatStringsSep "-";
-      splitSep = split "[-_\.]+";
+      splitSep = split "[-_\\.]+";
     in
     name: toLower (concatDash (filter isString (splitSep name)));
 

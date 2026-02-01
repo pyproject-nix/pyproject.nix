@@ -144,7 +144,7 @@ fix (self: {
     else
       let
         # Split input into (_, epoch, release, modifiers)
-        tokens = match "(([0-9]+)!)?([^-\+a-zA-Z]+)(.*)" version;
+        tokens = match "(([0-9]+)!)?([^-\\+a-zA-Z]+)(.*)" version;
         tokenAt = elemAt tokens;
 
         # Segments
