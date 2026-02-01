@@ -43,8 +43,8 @@
           inherit pythonInterpreters;
         });
         expected = map toString [
-          pythonInterpreters.python312
           pythonInterpreters.python313
+          pythonInterpreters.python312
         ];
       };
     };
