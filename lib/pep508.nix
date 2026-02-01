@@ -494,7 +494,7 @@ in
           }
         else
           (
-            if match ".+\/.+" input != null then
+            if match ".+/.+" input != null then
               # Input is a bare URL
               {
                 packageSegment = null;
