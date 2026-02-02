@@ -4,7 +4,7 @@
 }:
 let
   inherit (resolvers) resolveCyclic resolveNonCyclic;
-  inherit (lib) makeScope concatStringsSep;
+  inherit (lib) makeScope concatStringsSep unique;
 
   mkResolveBuildSystem =
     set:
@@ -62,13 +62,16 @@ let
           ];
 
           env = {
-            NIX_PYPROJECT_DEPS = concatStringsSep ":" (pkgsFinal.resolveVirtualEnv spec);
+            NIX_PYPROJECT_DEPS = concatStringsSep ":" (unique (pkgsFinal.resolveVirtualEnv spec));
             dontMoveLib64 = true;
             mkVirtualenvFlags = concatStringsSep " " (
               map (path: "--skip ${path}") finalAttrs.venvSkip
               ++ map (pat: "--ignore-collisions ${pat}") finalAttrs.venvIgnoreCollisions
             );
           };
+
+          # expose the buildInputs - avoid "Argument list too long"
+          buildInputs = unique (pkgsFinal.resolveVirtualEnv spec);
         });
 
       hooks = pkgsFinal.callPackage ./hooks { };
