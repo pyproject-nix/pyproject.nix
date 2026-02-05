@@ -262,6 +262,12 @@ in
   ) { };
 
   /*
+    Lookup & link ctypes library references at build time
+    .
+  */
+  pyprojectLinkCtypesHook = callPackage ./link-ctypes-hook { };
+
+  /*
     Install hook using pypa/installer.
 
     Used instead of `pyprojectInstallHook` for cross compilation support.
