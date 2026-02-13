@@ -83,10 +83,6 @@ let
               patches
               ;
 
-            env = {
-              inherit (python3Packages.cffi) NIX_CFLAGS_COMPILE;
-            };
-
             buildInputs = [ libffi ];
 
             nativeBuildInputs = [
@@ -461,6 +457,7 @@ let
           ++ resolveBuildSystem {
             setuptools = [ ];
             wheel = [ ];
+            flit-core = [ ];
           };
         };
 
