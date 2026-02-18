@@ -34,6 +34,12 @@ pyprojectConfigurePhase() {
     export UV_NO_CONFIG=1
   fi
 
+  # Cmake has it's setup hook in the main package, which opts in to nixpkgs
+  # cmake build behaviour
+  if [ -z "${dontUseCmakeConfigure-}" ]; then
+    export dontUseCmakeConfigure=true
+  fi
+
   runHook postConfigure
   echo "Finished executing pyprojectConfigurePhase"
 }
