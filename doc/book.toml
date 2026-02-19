@@ -10,11 +10,11 @@ command = "mdbook-cmdrun"
 [preprocessor.open-on-gh]
 command = "mdbook-open-on-gh"
 renderer = ["html"]
-
-[output.html]
 git-repository-url = "https://github.com/pyproject-nix/pyproject.nix"
 git-branch = "master"
 open-on-text = """
 <hr style="margin-top: 5em;" />
 Found an issue? [Edit this page on GitHub.]
 """
+
+[output.html]

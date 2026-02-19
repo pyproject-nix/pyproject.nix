@@ -61,14 +61,12 @@ let
             pkgsFinal.pyprojectMakeVenvHook
           ];
 
-          env = {
-            NIX_PYPROJECT_DEPS = concatStringsSep ":" (pkgsFinal.resolveVirtualEnv spec);
-            dontMoveLib64 = true;
-            mkVirtualenvFlags = concatStringsSep " " (
-              map (path: "--skip ${path}") finalAttrs.venvSkip
-              ++ map (pat: "--ignore-collisions ${pat}") finalAttrs.venvIgnoreCollisions
-            );
-          };
+          NIX_PYPROJECT_DEPS = concatStringsSep ":" (pkgsFinal.resolveVirtualEnv spec);
+          dontMoveLib64 = true;
+          mkVirtualenvFlags = concatStringsSep " " (
+            map (path: "--skip ${path}") finalAttrs.venvSkip
+            ++ map (pat: "--ignore-collisions ${pat}") finalAttrs.venvIgnoreCollisions
+          );
         });
 
       hooks = pkgsFinal.callPackage ./hooks { };
