@@ -10,8 +10,6 @@
       ...
     }:
     let
-      npins = import ./npins;
-
       forAllSystems = lib.genAttrs lib.systems.flakeExposed;
       inherit (nixpkgs) lib;
 
@@ -19,9 +17,23 @@
         inherit lib;
       };
 
+      ciFlake =
+        let
+          lockFile = builtins.fromJSON (builtins.readFile ./ci/flake.lock);
+          flake-compat-node = lockFile.nodes.${lockFile.nodes.root.inputs.flake-compat};
+          flake-compat = builtins.fetchTarball {
+            inherit (flake-compat-node.locked) url;
+            sha256 = flake-compat-node.locked.narHash;
+          };
+        in
+        import flake-compat {
+          copySourceTreeToStore = false;
+          src = ./ci;
+        };
+
     in
     {
-      githubActions = (import npins.nix-github-actions).mkGithubMatrix {
+      githubActions = (import ciFlake.inputs.nix-github-actions).mkGithubMatrix {
         checks =
           let
             strip = lib.flip removeAttrs [
@@ -88,7 +100,6 @@
                 pkgs.hivemind
                 pkgs.reflex
                 self.formatter.${system}
-                pkgs.npins
               ]
               ++ self.packages.${system}.doc.nativeBuildInputs;
             };
