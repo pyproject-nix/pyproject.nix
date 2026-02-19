@@ -10,3 +10,17 @@ A real world implementation is more complex. To see a lock file converter built 
 ```nix
 {{#include ./minimal-lock.nix}}
 ```
+
+## Nixpkgs compatibility
+
+`Pyproject.nix` builders support nixpkgs `>=22.11`, but with some important caveats.
+The `pyproject.nix` build hooks require a more recent version of `uv`(`>=0.5.7`) on older channels, which needs to be added via a nixpkgs overlay like:
+```nix
+import nixpkgs {
+    overlays = [
+      (final: prev: {
+        uv = inputs.uv2nix.packages.${system}.uv-bin;
+      })
+    ];
+}
+```

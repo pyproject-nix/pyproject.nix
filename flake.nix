@@ -168,6 +168,35 @@
                 mkdir $out
               '';
         }
+        // {
+          # Run a smoke test on 22.11 (the oldest supported nixpkgs)
+          # to ensure you can instantiate a package set with it
+          #
+          # While this older nixpkgs is supported we don't want to run the full gamut of tests because it would take too long.
+          build-22_11-compat =
+            let
+              pkgs' = import ciFlake.inputs.nixpkgs-22_11 {
+                inherit system;
+                overlays = [
+                  (_: _: {
+                    # The pyproject.nix test harness inherits sources from pythonPackages
+                    # and 22.11 versions fail to build for various reasons.
+                    inherit (pkgs) python3Packages;
+
+                    # Older uv versions lack important features, and 22.11 doesn't even contain uv.
+                    # Users of older channels need to pass a more recent uv.
+                    # Hint: Uv2nix provides a uv-bin package.
+                    inherit (pkgs) uv;
+                  })
+                ];
+              };
+
+            in
+            pkgs'.callPackage ./build/checks/smoke.nix {
+              name = "build-22_11-compat";
+              pyproject-nix = self;
+            };
+        }
       );
 
       formatter = forAllSystems (

@@ -7,10 +7,21 @@
   stdenv,
   hooks,
   runCommand,
-  replaceVars,
+  # Note: Deprecated in 25.05 and slated for removal.
+  # Only used for old nixpkgs compat.
+  substituteAll ? null,
+  replaceVars ? script: replacements: substituteAll ({
+    # Nixpkgs older than 24.11 does not have replaceVars.
+    # This is a "we have replaceVars at home"
+    src = script;
+  } // replacements),
 }:
 let
-  inherit (python) pythonOnBuildForHost;
+  # Set with fallback for old nixpkgs compat
+  pythonOnBuildForHost = python.pythonOnBuildForHost or python.pythonForBuild;
+
+  inherit (builtins) functionArgs;
+
   inherit (pkgs) buildPackages;
   pythonSitePackages = python.sitePackages;
 
@@ -178,6 +189,11 @@ in
     This is the default choice for both pyproject.toml & setuptools projects.
   */
   pyprojectHook =
+    let
+      # Older nixpkgs uses deps, while newer uses propagatedBuildInputs
+      depsAttr =
+        if (functionArgs makeSetupHook ? propagatedBuildInputs) then "propagatedBuildInputs" else "deps";
+    in
     callPackage
       (
         {
@@ -192,7 +208,7 @@ in
         makeSetupHook {
           name = "pyproject-hook";
           passthru.python = python;
-          propagatedBuildInputs = [
+          ${depsAttr} = [
             python
             pyprojectConfigureHook
             pyprojectBuildHook
