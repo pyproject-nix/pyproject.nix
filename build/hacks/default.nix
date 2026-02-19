@@ -2,7 +2,12 @@
 
 let
   inherit (pkgs) stdenv;
-  inherit (lib) isDerivation isAttrs listToAttrs;
+  inherit (lib)
+    isDerivation
+    isAttrs
+    listToAttrs
+    hasPrefix
+    ;
   inherit (builtins)
     concatMap
     elem
@@ -12,6 +17,8 @@ let
     isList
     typeOf
     filter
+    isString
+    isPath
     ;
 
 in
@@ -135,7 +142,9 @@ in
     : Path to Cargo source root
 
     lockFile
-    : Path to Cargo.lock (defaults to `${cargoRoot}/Cargo.lock`)
+    : Path to Cargo.lock (defaults to `${cargoRoot}/Cargo.lock`).
+      A relative string is resolved against the package source root, while a path
+      or an absolute string (such as a store path) is used verbatim.
 
     doUnpack
     : Whether to unpack sources using an intermediate derivation
@@ -191,7 +200,11 @@ in
       inherit cargoRoot src;
       cargoDeps = pkgs.rustPlatform.importCargoLock (
         {
-          lockFile = "${src}/${lockFile}";
+          lockFile =
+            if isPath lockFile || (isString lockFile && hasPrefix "/" lockFile) then
+              lockFile
+            else
+              "${src}/${lockFile}";
         }
         // importCargoLockArgs
       );

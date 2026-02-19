@@ -102,6 +102,25 @@ in
       ln -s ${venv} $out
     '';
 
+  importCargoLockAbsPath =
+    let
+      cryptography = pkgs.stdenv.mkDerivation {
+        inherit (pkgs.python3Packages.cryptography) pname version src;
+      };
+
+      cargoVendorDir =
+        (hacks.importCargoLock {
+          prev = cryptography;
+          lockFile = "${cryptography.src}/Cargo.lock";
+        }).cargoDeps;
+
+    in
+    pkgs.runCommand "importCargoLock-abspath-check" { } ''
+      # The absolute lockFile we passed must have been vendored verbatim.
+      diff ${cryptography.src}/Cargo.lock ${cargoVendorDir}/Cargo.lock
+      ln -s ${cargoVendorDir} $out
+    '';
+
   toNixpkgs =
     let
       overlay = hacks.toNixpkgs {
