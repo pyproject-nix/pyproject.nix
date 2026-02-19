@@ -3,6 +3,7 @@
 let
   inherit (pkgs) stdenv;
   inherit (lib) isDerivation isAttrs listToAttrs;
+  inherit (lib.strings) hasPrefix;
   inherit (builtins)
     concatMap
     elem
@@ -12,6 +13,8 @@ let
     isList
     typeOf
     filter
+    isString
+    isPath
     ;
 
 in
@@ -191,7 +194,7 @@ in
       inherit cargoRoot src;
       cargoDeps = pkgs.rustPlatform.importCargoLock (
         {
-          lockFile = "${src}/${lockFile}";
+          lockFile = if (isPath lockFile || (isString lockFile && hasPrefix "/" lockFile)) then lockFile else "${src}/${lockFile}";
         }
         // importCargoLockArgs
       );
