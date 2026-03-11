@@ -17,15 +17,29 @@
   } // replacements),
 }:
 let
-  # Set with fallback for old nixpkgs compat
-  pythonOnBuildForHost = python.pythonOnBuildForHost or python.pythonForBuild;
+  isCross = stdenv.buildPlatform != stdenv.hostPlatform;
+  pythonOnBuildForHost =
+    # Take a broken nixpkgs behaviour re overriding Python interpreter into account.
+    #
+    # When overriding the Python interpreter pre
+    # https://github.com/NixOS/nixpkgs/commit/64214826833482bb3b4fd89b77aabf1248abe33b
+    # all non-derivation values were passed down to the various Python interpreter variants (such as pythonOnBuildForHost) too.
+    #
+    # We can work around this broken behaviour for native builds by only considering the one overriden Python attribute, ignoring it's sub-variants.
+    # This also has the advantage of possibly using less memory as we don't have to instantiate the same derivation yet again.
+    #
+    # Cross compiled Python's would require a nixpkgs fix to propagate it's overriden settings to the build variants,
+    # but for cross it's also not very likely to matter as the build Python isn't what you normally care about customising.
+    if isCross then (
+      # fallback for old (22.11+) nixpkgs compat
+      python.pythonOnBuildForHost or python.pythonForBuild
+    )
+    else python;
 
   inherit (builtins) functionArgs;
 
   inherit (pkgs) buildPackages;
   pythonSitePackages = python.sitePackages;
-
-  isCross = stdenv.buildPlatform != stdenv.hostPlatform;
 
   # When cross compiling create a virtual environment for the build.
   #
