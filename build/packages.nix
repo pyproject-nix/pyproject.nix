@@ -63,6 +63,7 @@ let
 
           NIX_PYPROJECT_DEPS = concatStringsSep ":" (pkgsFinal.resolveVirtualEnv spec);
           dontMoveLib64 = true;
+          noDumpEnvVars = true;
           mkVirtualenvFlags = concatStringsSep " " (
             map (path: "--skip ${path}") finalAttrs.venvSkip
             ++ map (pat: "--ignore-collisions ${pat}") finalAttrs.venvIgnoreCollisions

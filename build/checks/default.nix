@@ -245,6 +245,15 @@ listToAttrs (
 // {
   # Tests that don't need to run on every supported interpreter
 
+  make-venv-empty =
+    let
+      python = pkgs.python3;
+      pythonSet = pkgs.callPackage pyproject-nix.build.packages {
+        inherit python;
+      };
+    in
+    pythonSet.mkVirtualEnv "empty-venv" { };
+
   make-venv-cross =
     let
       pkgs' = pkgs.pkgsCross.aarch64-multiplatform;
