@@ -259,6 +259,7 @@ in
       name = "pyproject-editable-hook";
       substitutions = {
         editableHook = editableHook';
+        interpreter = pythonInterpreter;
       };
     } ./pyproject-build-editable-hook.sh
   ) { };

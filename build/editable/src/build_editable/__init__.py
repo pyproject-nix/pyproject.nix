@@ -1,4 +1,5 @@
 import argparse
+import os.path
 import subprocess
 import sys
 import tempfile
@@ -29,7 +30,7 @@ arg_parser = argparse.ArgumentParser(description="Build editables according PEP-
 arg_parser.add_argument(
     "--python",
     help="Build Python interpreter",
-    default="python",
+    default=os.path.basename(sys.executable),
 )
 arg_parser.add_argument(
     "--dist",
