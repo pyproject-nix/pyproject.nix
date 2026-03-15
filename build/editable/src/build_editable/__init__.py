@@ -1,5 +1,4 @@
 import argparse
-import os.path
 import subprocess
 import sys
 import tempfile
@@ -8,6 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, Union, cast
+import shutil
 
 # Backwards compat with old Python for sandbox builds.
 if sys.version_info >= (3, 11):
@@ -26,11 +26,19 @@ class ArgsNS(argparse.Namespace):
     verbose: str  # pyright: ignore[reportUninitializedInstanceVariable]
 
 
+
+def python_interpreter() -> str:
+    for candidate in ["python", "python3"]:
+        if shutil.which(candidate) is not None:
+            return candidate
+    raise ValueError("No Python interpreter found")
+
+
 arg_parser = argparse.ArgumentParser(description="Build editables according PEP-660")
 arg_parser.add_argument(
     "--python",
     help="Build Python interpreter",
-    default=os.path.basename(sys.executable),
+    default=python_interpreter(),
 )
 arg_parser.add_argument(
     "--dist",
