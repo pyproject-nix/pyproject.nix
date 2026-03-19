@@ -116,7 +116,7 @@ in
         dependency-groups = mapAttrs (_: mkSpec) filteredDeps.groups;
       };
 
-      env.EDITABLE_ROOT = root;
+      EDITABLE_ROOT = root;
 
       nativeBuildInputs = [
         pyprojectEditableHook
