@@ -29,15 +29,22 @@ let
     splitVersion
     concatStringsSep
     tail
+    filter
+    split
+    concatMap
     ;
-  inherit (lib)
-    stringToCharacters
-    sublist
-    hasInfix
+  inherit (lib) stringToCharacters hasPrefix;
+  inherit (import ./lib.nix)
+    splitComma
+    stripStr
     take
+    sublist'
+    tailAt
     toInt
     ;
-  inherit (import ./lib.nix { inherit lib; }) splitComma stripStr;
+
+  # Split the
+  splitIn = s: filter isString (split "[, ]+" s);
 
   # Marker fields + their parsers
   markerFields =
@@ -138,8 +145,8 @@ let
   boolOps = {
     "and" = x: y: x && y;
     "or" = x: y: x || y;
-    "in" = x: y: hasInfix x y;
-    "not in" = x: y: !(hasInfix x y);
+    "in" = elem;
+    "not in" = x: y: !(elem x y);
   };
 
   primitives = [
@@ -168,6 +175,13 @@ let
     ) (-1);
 
   inherit (pep508) parseMarkers evalMarkers;
+
+  unquoteString =
+    value:
+    let
+      singleTicked = match "^'(.+)'$" value;
+    in
+    fromJSON (if singleTicked != null then "\"${head singleTicked}\"" else value);
 
 in
 {
@@ -368,39 +382,45 @@ in
                   if orIdx > 0 then
                     {
                       type = "boolOp";
-                      lhs = reduceValue lhs' (sublist 0 orIdx value);
+                      lhs = reduceValue lhs' (sublist' 0 orIdx value);
                       op = elemAt value orIdx;
-                      rhs = reduceValue lhs' (sublist (orIdx + 1) (length value - 1) value);
+                      rhs = reduceValue lhs' (tailAt (orIdx + 1) value);
                     }
                   # Value has a logical and
                   else if andIdx > 0 then
                     {
                       type = "boolOp";
-                      lhs = reduceValue lhs' (sublist 0 andIdx value);
+                      lhs = reduceValue lhs' (sublist' 0 andIdx value);
                       op = elemAt value andIdx;
-                      rhs = reduceValue lhs' (sublist (andIdx + 1) (length value - 1) value);
+                      rhs = reduceValue lhs' (tailAt (andIdx + 1) value);
                     }
                   # Value has a comparison (==, etc) operator
                   else if compIdx >= 0 then
                     rec {
                       type = "compare";
-                      lhs = reduceValue lhs' (sublist 0 compIdx value);
+                      lhs = reduceValue lhs' (sublist' 0 compIdx value);
                       op = elemAt value compIdx;
-                      rhs = reduceValue lhs (sublist (compIdx + 1) (length value - 1) value);
+                      rhs = reduceValue lhs (tailAt (compIdx + 1) value);
                     }
                   else if notIdx > 0 then
-                    rec {
+                    {
                       type = "boolOp";
-                      lhs = reduceValue lhs' (sublist 0 notIdx value);
+                      lhs = reduceValue lhs' (sublist' 0 notIdx value);
                       op = "not in";
-                      rhs = reduceValue lhs (sublist (inIdx + 1) (length value - 1) value);
+                      rhs = {
+                        type = "enum";
+                        value = concatMap (x: splitIn (unquoteString x)) (tailAt (notIdx + 2) value);
+                      };
                     }
                   else if inIdx > 0 then
-                    rec {
+                    {
                       type = "boolOp";
-                      lhs = reduceValue lhs' (sublist 0 inIdx value);
+                      lhs = reduceValue lhs' (sublist' 0 inIdx value);
                       op = "in";
-                      rhs = reduceValue lhs (sublist (inIdx + 1) (length value - 1) value);
+                      rhs = {
+                        type = "enum";
+                        value = concatMap (x: splitIn (unquoteString x)) (tailAt (inIdx + 1) value);
+                      };
                     }
                   else
                     throw "Unhandled state for input value: ${toJSON value}"
@@ -414,8 +434,7 @@ in
           else
             (
               let
-                singleTicked = match "^'(.+)'$" value;
-                value' = fromJSON (if singleTicked != null then "\"${head singleTicked}\"" else value);
+                value' = unquoteString value;
               in
               if lhs' != { } && lhs'.type == "variable" then
                 markerFields.${lhs'.value} value'
@@ -741,7 +760,7 @@ in
       # This isn't a problem on CPython where we can use python.version to get the full version,
       # but on pypy we don't know which language patch version of Python the interpreter is for.
       python_full_version =
-        if lib.hasPrefix python.passthru.pythonVersion python.version then
+        if hasPrefix python.passthru.pythonVersion python.version then
           python.version
         else
           python.passthru.pythonVersion;
@@ -797,6 +816,8 @@ in
       else if value.type == "version" || value.type == "extra" || value.type == "platform_release" then
         value.value
       else if elem value.type primitives then
+        value.value
+      else if value.type == "enum" then # Special type for `in`
         value.value
       else
         throw "Unknown type '${value.type}'"
