@@ -235,8 +235,19 @@ fix (self: {
           };
           op = "not in";
           rhs = {
-            type = "string";
-            value = "x86_64 X86_64 aarch64 AARCH64 ppc64le PPC64LE amd64 AMD64 win32 WIN32";
+            type = "enum";
+            value = [
+              "x86_64"
+              "X86_64"
+              "aarch64"
+              "AARCH64"
+              "ppc64le"
+              "PPC64LE"
+              "amd64"
+              "AMD64"
+              "win32"
+              "WIN32"
+            ];
           };
           type = "boolOp";
         };
@@ -275,8 +286,19 @@ fix (self: {
           };
           op = "in";
           rhs = {
-            type = "string";
-            value = "x86_64 X86_64 aarch64 AARCH64 ppc64le PPC64LE amd64 AMD64 win32 WIN32";
+            type = "enum";
+            value = [
+              "x86_64"
+              "X86_64"
+              "aarch64"
+              "AARCH64"
+              "ppc64le"
+              "PPC64LE"
+              "amd64"
+              "AMD64"
+              "win32"
+              "WIN32"
+            ];
           };
           type = "boolOp";
         };

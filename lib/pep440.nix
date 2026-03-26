@@ -18,7 +18,7 @@ let
     sublist
     findFirst
     ;
-  inherit (import ./lib.nix { inherit lib; }) splitComma;
+  inherit (import ./lib.nix) splitComma;
 
   # A version of lib.toInt that supports leading zeroes
   toIntRelease =

@@ -13,7 +13,7 @@ let
     hasContext
     unsafeDiscardStringContext
     ;
-  inherit (import ./lib.nix { inherit lib; }) stripStr;
+  inherit (import ./lib.nix) stripStr;
 
   uncomment = l: head (match " *([^#]*).*" l);
 
