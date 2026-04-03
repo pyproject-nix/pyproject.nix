@@ -2,11 +2,11 @@
   runCommand,
   lib,
   python,
-  mkVirtualEnv,
+  pythonPkgsBuildHost,
 }:
 
 let
-  env = mkVirtualEnv "editable-hook-env" (
+  env = pythonPkgsBuildHost.mkVirtualEnv "editable-hook-env" (
     {
       libcst = [ ];
     }
