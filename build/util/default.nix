@@ -1,4 +1,4 @@
-{ runCommand, python3 }:
+{ stdenv, python3 }:
 
 {
 
@@ -48,21 +48,25 @@
       pname ? package.pname,
       version ? package.version,
     }:
-    runCommand "${pname}-${version}"
-      {
-        inherit (package)
-          name
-          pname
-          version
-          meta
-          passthru
-          ;
-        nativeBuildInputs = [
-          python3
-        ];
-      }
-      ''
+    stdenv.mkDerivation {
+      inherit pname version;
+      inherit (package)
+        name
+        meta
+        passthru
+        ;
+      dontConfigure = true;
+      dontBuild = true;
+      dontUnpack = true;
+      nativeBuildInputs = [
+        python3
+      ];
+
+      installPhase = ''
+        runHook preInstall
         python3 ${./mk-application.py} --venv ${venv} --base ${package} --out "$out"
+        runHook postInstall
       '';
+    };
 
 }
