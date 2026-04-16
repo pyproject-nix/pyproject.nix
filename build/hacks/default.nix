@@ -249,6 +249,7 @@ in
         "resolveVirtualEnv"
         "mkVirtualEnv"
         "hooks"
+        "callPackage"
       ];
     in
     {
@@ -263,7 +264,10 @@ in
               hookNames = attrNames pythonSet.hooks;
               predicate = if packages == null then (_: true) else packages;
             in
-            filter (name: !elem name wellKnown && !elem name hookNames && predicate name) (attrNames pythonSet)
+            filter (
+              name:
+              !elem name wellKnown && !elem name hookNames && predicate name && isDerivation pythonSet.${name}
+            ) (attrNames pythonSet)
           )
         else if isList packages then
           packages
