@@ -17,10 +17,12 @@
     # Example
 
     ```nix
-    util.mkApplication {
+    let
+        util = pkgs.callPackage pyproject-nix.build.util { };
+    in util.mkApplication {
       venv = pythonSet.mkVirtualEnv "mkApplication-check-venv" {
         pip = [ ];
-      }
+      };
       package = pythonSet.pip;
     }
     =>
