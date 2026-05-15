@@ -12,7 +12,6 @@ let
     match
     elemAt
     foldl'
-    substring
     typeOf
     fromJSON
     toJSON
@@ -22,7 +21,6 @@ let
     elem
     length
     isList
-    any
     isAttrs
     tryEval
     deepSeq
@@ -33,7 +31,7 @@ let
     split
     concatMap
     ;
-  inherit (lib) stringToCharacters hasPrefix;
+  inherit (lib) hasPrefix;
   inherit (import ./lib.nix)
     splitComma
     stripStr
@@ -240,25 +238,39 @@ in
   */
   parseMarkers =
     let
-      opChars = [
-        "="
-        ">"
-        "<"
-        "!"
-        "~"
-        "^"
-      ];
+      # Regex used to tokenise the marker string in one pass.
+      tokenRe = "('[^']*'|\"[^\"]*\"|not[ \t]+in|[=!<>~^]+|[a-zA-Z_][a-zA-Z0-9_]*|[()])";
 
-      # State exit conditions
-      emptyOrOp = _pos: c: c == " " || c == "(" || c == ")" || elem c opChars;
-      nonOp = _pos: c: !elem c opChars;
-      anyCond = _pos: _c: true;
-      # Use look-behind to assess whether a string was closed
-      stringCond' =
-        char: chars: startPos: pos: _c:
-        pos - 1 != startPos && (elemAt chars (pos - 1)) == char;
-      singleStringCond' = stringCond' "'";
-      doubleStringCond' = stringCond' "\"";
+      # Group tokens according to paren expression groups.
+      groupTokens' =
+        tokens: ltokens:
+        let
+          groupTokens =
+            stack: i:
+            if i == ltokens then
+              stack
+            else
+              let
+                token = elemAt tokens i;
+              in
+              if token == "(" then
+                (
+                  let
+                    group' = groupTokens [ ] (i + 1);
+                  in
+                  groupTokens (stack ++ [ (elemAt group' 0) ]) (elemAt group' 1)
+                )
+              else if token == ")" then
+                [
+                  stack
+                  (i + 1)
+                ]
+              else
+                groupTokens (stack ++ [ token ]) (i + 1);
+        in
+        groupTokens [ ] 0;
+
+      unquoteVariable = s: if markerFields ? ${s} then s else unquoteString s;
 
     in
     input:
@@ -266,99 +278,14 @@ in
       [ ]
     else
       let
-        chars = stringToCharacters input;
-        cmax = (length chars) - 1;
-        last = elemAt chars cmax;
-        singleStringCond = singleStringCond' chars;
-        doubleStringCond = doubleStringCond' chars;
+        # Single-pass tokenizer using regex
+        tokens = concatMap (tokens: if isList tokens then tokens else [ ]) (split tokenRe input);
 
-        # Find tokens in character stream
-        tokens' =
-          foldl'
-            (acc: c: rec {
-              # Current position
-              pos = acc.pos + 1;
-
-              # Set start position of token to current position if exit condition matches
-              start =
-                if acc.cond pos c then
-                  (if c == " " then -1 else pos) # If character is whitespace keep seeking
-                else
-                  acc.start; # Else propagate start position
-
-              # Assign new exit condition on state change
-              cond =
-                if start == pos || start == -1 then
-                  (
-                    if c == " " || c == "(" || c == ")" then
-                      anyCond
-                    else if c == "\"" then
-                      (doubleStringCond pos)
-                    else if c == "'" then
-                      (singleStringCond pos)
-                    else if elem c opChars then
-                      nonOp
-                    else
-                      emptyOrOp
-                  )
-                else
-                  acc.cond;
-
-              tokens =
-                # Reached end of token
-                if acc.start != -1 && start != acc.start then
-                  acc.tokens ++ [ (substring acc.start (pos - acc.start) input) ]
-                # Reached end of input
-                else if pos == cmax && acc.start != -1 then
-                  acc.tokens ++ [ (substring acc.start (cmax + 1 - acc.start) input) ]
-                else
-                  acc.tokens;
-
-            })
-            {
-              pos = -1; # Parser position
-              start = -1; # Start position for current token (-1 indicates searching through whitespace)
-              cond = anyCond; # Function condition ending current parser state
-              tokens = [ ]; # List of discovered tokens as strings
-            }
-            chars;
-
-        # Special case: Single character tail token
-        tokens =
-          if tokens'.start == cmax && last != " " then tokens'.tokens ++ [ last ] else tokens'.tokens;
-
-        # Group tokens according to paren expression groups
         ltokens = length tokens;
-        groupTokens =
-          stack: i:
-          if i == ltokens then
-            stack
-          else
-            let
-              token = elemAt tokens i;
-            in
-            # New group, initialize a new stack
-            if token == "(" then
-              (
-                let
-                  group' = groupTokens [ ] (i + 1);
-                in
-                groupTokens (stack ++ [ (elemAt group' 0) ]) (elemAt group' 1)
-              )
-            # Closing group, return stack
-            else if token == ")" then
-              # Return a tuple of stack and next so the "(" branch above can know where the list is closed
-              [
-                stack
-                (i + 1)
-              ]
-            # Append all other token types to stack.
-            else
-              groupTokens (stack ++ [ token ]) (i + 1);
 
         # The grouping routine is a tad slow and uses recursion.
         # We can completely avoid it if the input doesn't contain any grouped subexpressions.
-        groupedTokens = if any (token: token == "(") tokens then groupTokens [ ] 0 else tokens;
+        groupedTokens = if match ".*[(].*" input != null then groupTokens' tokens ltokens else tokens;
 
         # Reduce values into AST
         reduceValue =
@@ -375,8 +302,7 @@ in
                     andIdx = resultIndex' (token: token == "and") value;
                     compIdx = resultIndex' (token: comparators ? ${token}) value;
                     inIdx = resultIndex' (token: token == "in") value;
-                    notIdx = # Take possible negation into account
-                      if inIdx > 0 && elemAt value (inIdx - 1) == "not" then inIdx - 1 else -1;
+                    notIdx = resultIndex' (token: token == "not in") value;
                   in
                   # Value has a logical or (takes precedence over and)
                   if orIdx > 0 then
@@ -402,6 +328,7 @@ in
                       op = elemAt value compIdx;
                       rhs = reduceValue lhs (tailAt (compIdx + 1) value);
                     }
+                  # Value has a "not in"
                   else if notIdx > 0 then
                     {
                       type = "boolOp";
@@ -409,9 +336,10 @@ in
                       op = "not in";
                       rhs = {
                         type = "enum";
-                        value = concatMap (x: splitIn (unquoteString x)) (tailAt (notIdx + 2) value);
+                        value = concatMap (x: splitIn (unquoteVariable x)) (tailAt (notIdx + 1) value);
                       };
                     }
+                  # Value has a "in"
                   else if inIdx > 0 then
                     {
                       type = "boolOp";
@@ -419,7 +347,7 @@ in
                       op = "in";
                       rhs = {
                         type = "enum";
-                        value = concatMap (x: splitIn (unquoteString x)) (tailAt (inIdx + 1) value);
+                        value = concatMap (x: splitIn (unquoteVariable x)) (tailAt (inIdx + 1) value);
                       };
                     }
                   else
@@ -444,6 +372,7 @@ in
                   value = value';
                 }
             );
+
       in
       reduceValue { } groupedTokens;
 
