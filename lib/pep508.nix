@@ -239,7 +239,17 @@ in
   parseMarkers =
     let
       # Regex used to tokenise the marker string in one pass.
-      tokenRe = "('[^']*'|\"[^\"]*\"|not[ \t]+in|[=!<>~^]+|[a-zA-Z_][a-zA-Z0-9_]*|[()])";
+      tokenRe =
+        "("
+        + (concatStringsSep "|" [
+          "'[^']*'" # Single-quoted string
+          "\"[^\"]*\"" # Double-quoted string
+          "not[ \t]+in" # Two-word operator (must precede bare-word)
+          "[=!<>~^]+" # Comparison operators
+          "[a-zA-Z_][a-zA-Z0-9_]*" # Identifier/keyword/marker
+          "[()]" # Sub-expr paren groupings
+        ])
+        + ")";
 
       # Group tokens according to paren expression groups.
       groupTokens' =
