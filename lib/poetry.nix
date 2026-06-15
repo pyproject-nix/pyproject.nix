@@ -23,6 +23,7 @@ lib.fix (
       filter
       split
       concatStringsSep
+      concatMap
       ;
     inherit (lib) optionalAttrs concatLists;
     inherit (import ./lib.nix) splitComma;
@@ -110,16 +111,13 @@ lib.fix (
     # ]
     normalizeDependendenciesToList =
       deps:
-      foldl' (
-        acc: name:
-        acc
-        ++ (
-          let
-            dep = deps.${name};
-          in
-          if typeOf dep == "list" then map (normalizeDep name) dep else [ (normalizeDep name dep) ]
-        )
-      ) [ ] (attrNames deps);
+      concatMap (
+        name:
+        let
+          dep = deps.${name};
+        in
+        if typeOf dep == "list" then map (normalizeDep name) dep else [ (normalizeDep name dep) ]
+      ) (attrNames deps);
 
     dummyMarker = {
       type = "bool";

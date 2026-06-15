@@ -7,7 +7,15 @@
   ...
 }:
 let
-  inherit (builtins) attrValues foldl' filter;
+  inherit (builtins)
+    attrValues
+    filter
+    concatMap
+    listToAttrs
+    genList
+    elemAt
+    length
+    ;
   inherit (lib) concatLists;
 
 in
@@ -51,24 +59,29 @@ in
         ++ concatLists (attrValues filteredDeps.extras)
         ++ filteredDeps.build-systems;
 
+      mismatchPairs = concatMap (
+        dep:
+        let
+          pname = pypa.normalizePackageName dep.name;
+          pversion = python.pkgs.${pname}.version;
+          version = pep440.parseVersion python.pkgs.${pname}.version;
+          incompatible = filter (cond: !pep440.comparators.${cond.op} version cond.version) dep.conditions;
+        in
+        if incompatible == [ ] then
+          [ ]
+        else
+          [
+            {
+              name = pname;
+              value = {
+                version = pversion;
+                conditions = incompatible;
+              };
+            }
+          ]
+      ) flatDeps;
+
+      nPairs = length mismatchPairs;
     in
-    foldl' (
-      acc: dep:
-      let
-        pname = pypa.normalizePackageName dep.name;
-        pversion = python.pkgs.${pname}.version;
-        version = pep440.parseVersion python.pkgs.${pname}.version;
-        incompatible = filter (cond: !pep440.comparators.${cond.op} version cond.version) dep.conditions;
-      in
-      if incompatible == [ ] then
-        acc
-      else
-        acc
-        // {
-          ${pname} = {
-            version = pversion;
-            conditions = incompatible;
-          };
-        }
-    ) { } flatDeps;
+    listToAttrs (genList (i: elemAt mismatchPairs (nPairs - 1 - i)) nPairs);
 }

@@ -7,7 +7,10 @@ let
     typeOf
     split
     filter
-    foldl'
+    elemAt
+    genList
+    length
+    concatMap
     readFile
     dirOf
     hasContext
@@ -31,6 +34,17 @@ lib.fix (self: {
   */
 
   parseRequirementsTxt =
+    let
+      # A line ending in a backslash continues onto the next one.
+      matchCont = match "(.+) *\\\\";
+
+      stripLine =
+        l':
+        let
+          m = matchCont l';
+        in
+        stripStr (if m != null then (head m) else l');
+    in
     # The contents of or path to requirements.txt
     requirements:
     let
@@ -50,67 +64,46 @@ lib.fix (self: {
       lines' = filter (l: l != "") (
         map uncomment (filter (l: typeOf l == "string") (split "\n" requirements'))
       );
-      # Fold line continuations
-      inherit
-        (
-          (foldl'
-            (
-              acc: l':
-              let
-                m = match "(.+) *\\\\" l';
-                continue = m != null;
-                l = stripStr (if continue then (head m) else l');
-              in
-              if continue then
-                {
-                  line = acc.line ++ [ l ];
-                  inherit (acc) lines;
-                }
-              else
-                {
-                  line = [ ];
-                  lines = acc.lines ++ [ (acc.line ++ [ l ]) ];
-                }
-            )
-            {
-              lines = [ ];
-              line = [ ];
-            }
-            lines'
-          )
-        )
-        lines
-        ;
+
+      endIdxs = concatMap (
+        i: if matchCont (elemAt lines' i) != null then [ ] else [ i ]
+      ) (genList (i: i) (length lines'));
+
+      lines = genList (
+        i:
+        let
+          end = elemAt endIdxs i;
+          start = if i == 0 then 0 else (elemAt endIdxs (i - 1)) + 1;
+        in
+        genList (k: stripLine (elemAt lines' (start + k))) (end - start + 1)
+      ) (length endIdxs);
 
     in
-    foldl' (
-      acc: l:
+    concatMap (
+      l:
       let
         m = match "-(c|r) (.+)" (head l);
       in
-      acc
-      ++ (
-        # Common case, parse string
-        if m == null then
-          [
-            {
-              requirement = pep508.parseString (head l);
-              flags = tail l;
-            }
-          ]
+      # Common case, parse string
+      if m == null then
+        [
+          {
+            requirement = pep508.parseString (head l);
+            flags = tail l;
+          }
+        ]
 
-        # Don't support constraint files
-        else if (head m) == "c" then
-          throw "Unsupported flag: -c"
+      # Don't support constraint files
+      else if (head m) == "c" then
+        throw "Unsupported flag: -c"
 
-        # Recursive requirements.txt
-        else
-          (self.parseRequirementsTxt (
-            if root == null then
-              throw "When importing recursive requirements.txt requirements needs to be passed as a path"
-            else
-              root + "/${head (tail m)}"
-          ))
-      )
-    ) [ ] lines;
+      # Recursive requirements.txt
+      else
+        (self.parseRequirementsTxt (
+          if root == null then
+            throw "When importing recursive requirements.txt requirements needs to be passed as a path"
+          else
+            root + "/${head (tail m)}"
+        ))
+    ) lines;
 })
