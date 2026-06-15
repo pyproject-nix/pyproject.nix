@@ -1,126 +1,96 @@
 {
   "build-system": [
     {
-      "pname": "poetry-core",
-      "version": "1.9.0"
+      "pname": "poetry-core"
     }
   ],
   "dependencies": [
     {
-      "pname": "build",
-      "version": "1.2.1"
+      "pname": "build"
     },
     {
-      "pname": "cachecontrol",
-      "version": "0.14.0"
+      "pname": "cachecontrol"
     },
     {
-      "pname": "cleo",
-      "version": "2.1.0"
+      "pname": "cleo"
     },
     {
-      "pname": "crashtest",
-      "version": "0.4.1"
+      "pname": "crashtest"
     },
     {
-      "pname": "dulwich",
-      "version": "0.22.1"
+      "pname": "dulwich"
     },
     {
-      "pname": "filelock",
-      "version": "3.15.1"
+      "pname": "filelock"
     },
     {
-      "pname": "html5lib",
-      "version": "1.1"
+      "pname": "html5lib"
     },
     {
-      "pname": "importlib-metadata",
-      "version": "7.1.0"
+      "pname": "importlib-metadata"
     },
     {
-      "pname": "installer",
-      "version": "0.7.0"
+      "pname": "installer"
     },
     {
-      "pname": "jsonschema",
-      "version": "4.22.0"
+      "pname": "jsonschema"
     },
     {
-      "pname": "keyring",
-      "version": "25.2.1"
+      "pname": "keyring"
     },
     {
-      "pname": "lockfile",
-      "version": "0.12.2"
+      "pname": "lockfile"
     },
     {
-      "pname": "packaging",
-      "version": "24.1"
+      "pname": "packaging"
     },
     {
-      "pname": "pexpect",
-      "version": "4.9.0"
+      "pname": "pexpect"
     },
     {
-      "pname": "pkginfo",
-      "version": "1.11.1"
+      "pname": "pkginfo"
     },
     {
-      "pname": "platformdirs",
-      "version": "4.2.2"
+      "pname": "platformdirs"
     },
     {
-      "pname": "poetry-core",
-      "version": "1.9.0"
+      "pname": "poetry-core"
     },
     {
-      "pname": "poetry-plugin-export",
-      "version": "1.4.0"
+      "pname": "poetry-plugin-export"
     },
     {
-      "pname": "pyproject-hooks",
-      "version": "1.0.0"
+      "pname": "pyproject-hooks"
     },
     {
-      "pname": "python3",
-      "version": "3.12.5"
+      "pname": "python3"
     },
     {
-      "pname": "requests",
-      "version": "2.32.3"
+      "pname": "requests"
     },
     {
-      "pname": "requests-toolbelt",
-      "version": "1.0.0"
+      "pname": "requests-toolbelt"
     },
     {
-      "pname": "shellingham",
-      "version": "1.5.4"
+      "pname": "shellingham"
     },
     {
-      "pname": "tomli",
-      "version": "2.0.1"
+      "pname": "tomli"
     },
     {
-      "pname": "tomlkit",
-      "version": "0.12.5"
+      "pname": "tomlkit"
     },
     {
-      "pname": "trove-classifiers",
-      "version": "2024.7.2"
+      "pname": "trove-classifiers"
     },
     {
-      "pname": "urllib3",
-      "version": "2.2.2"
+      "pname": "urllib3"
     },
     {
-      "pname": "virtualenv",
-      "version": "20.26.2"
+      "pname": "virtualenv"
     },
     {
-      "pname": "pre-commit",
-      "version": "3.3.3"
+      "pname": "pre-commit"
     }
   ],
   "meta": {
@@ -129,6 +99,7 @@
       "deprecated": false,
       "free": true,
       "fullName": "MIT License",
+      "licenseType": "simple",
       "redistributable": true,
       "shortName": "mit",
       "spdxId": "MIT",
@@ -139,78 +110,61 @@
   "optional-dependencies": {
     "dev": [
       {
-        "pname": "pre-commit",
-        "version": "3.3.3"
+        "pname": "pre-commit"
       }
     ],
     "github-actions": [
       {
-        "pname": "pytest-github-actions-annotate-failures",
-        "version": "0.1.0"
+        "pname": "pytest-github-actions-annotate-failures"
       }
     ],
     "test": [
       {
-        "pname": "cachy",
-        "version": "0.3.0"
+        "pname": "cachy"
       },
       {
-        "pname": "deepdiff",
-        "version": "7.0.1"
+        "pname": "deepdiff"
       },
       {
-        "pname": "deepdiff",
-        "version": "7.0.1"
+        "pname": "deepdiff"
       },
       {
-        "pname": "httpretty",
-        "version": "1.1.4"
+        "pname": "httpretty"
       },
       {
-        "pname": "pytest",
-        "version": "8.3.2"
+        "pname": "pytest"
       },
       {
-        "pname": "pytest-cov",
-        "version": "5.0.0"
+        "pname": "pytest-cov"
       },
       {
-        "pname": "pytest-mock",
-        "version": "3.14.0"
+        "pname": "pytest-mock"
       },
       {
-        "pname": "pytest-randomly",
-        "version": "3.13.0"
+        "pname": "pytest-randomly"
       },
       {
-        "pname": "pytest-xdist",
-        "version": "3.6.1"
+        "pname": "pytest-xdist"
       },
       {
-        "pname": "zipp",
-        "version": "3.19.2"
+        "pname": "zipp"
       }
     ],
     "typing": [
       {
-        "pname": "mypy",
-        "version": "1.10.1"
+        "pname": "mypy"
       },
       {
-        "pname": "types-html5lib",
-        "version": "1.1.11.20240806"
+        "pname": "types-html5lib"
       },
       {
-        "pname": "types-jsonschema",
-        "version": "0.1.0"
+        "pname": "types-jsonschema"
       },
       {
-        "pname": "types-requests",
-        "version": "2.32.0.20240914"
+        "pname": "types-requests"
       },
       {
-        "pname": "typing-extensions",
-        "version": "4.12.2"
+        "pname": "typing-extensions"
       }
     ]
   },
