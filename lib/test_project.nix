@@ -313,6 +313,7 @@ lib.fix (self: {
               deprecated = false;
               free = true;
               fullName = "MIT License";
+              licenseType = "simple";
               redistributable = true;
               shortName = "mit";
               spdxId = "MIT";

@@ -68,13 +68,21 @@ let
     self = python;
     # Poetry plugins aren't exposed in the Python set
     packageOverrides =
-      _self: _super:
+      _self: super:
       let
         poetry' = pkgs.poetry.override { python3 = python; };
       in
       {
         inherit (poetry'.plugins) poetry-plugin-export;
         pdm = null;
+
+        # These are integration build tests; we don't need to run upstream
+        # package test suites here. unearth 0.18.2's suite fails against newer
+        # nixpkgs (changed packaging prerelease semantics), so just skip checks.
+        unearth = super.unearth.overridePythonAttrs (_: {
+          doCheck = false;
+          doInstallCheck = false;
+        });
       };
   };
 in

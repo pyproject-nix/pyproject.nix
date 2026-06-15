@@ -25,6 +25,26 @@ in
         python = mocks.cpythonLinux38;
       };
       expected = {
+        installer = {
+          conditions = [
+            {
+              op = "<";
+              version = {
+                dev = null;
+                epoch = 0;
+                local = null;
+                post = null;
+                pre = null;
+                release = [
+                  0
+                  8
+                ];
+                str = "0.8";
+              };
+            }
+          ];
+          version = "1.0.0";
+        };
         resolvelib = {
           conditions = [
             {

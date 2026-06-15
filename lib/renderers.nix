@@ -126,7 +126,7 @@ in
       format ? "pyproject",
       # PEP-508 environment
       environ ? pep508.mkEnviron python,
-    #
+      #
     }:
     let
       filteredDeps = pep621.filterDependenciesByEnviron environ extras project.dependencies;
