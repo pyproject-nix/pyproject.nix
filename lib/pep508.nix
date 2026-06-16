@@ -31,7 +31,7 @@ let
     split
     concatMap
     ;
-  inherit (lib) hasPrefix;
+  inherit (lib) hasPrefix toLower;
   inherit (import ./lib.nix)
     splitComma
     stripStr
@@ -41,7 +41,7 @@ let
     toInt
     ;
 
-  # Split the
+  # Split a string literal `in` enum into its individual members on whitespace/commas.
   splitIn = s: filter isString (split "[, ]+" s);
 
   # Marker fields + their parsers
@@ -140,11 +140,17 @@ let
     "===" = a: b: a == b;
   };
 
+  inEnum =
+    let
+      lower = v: if isString v then toLower v else v;
+    in
+    x: y: if isList y then elem (lower x) y else lower x == lower y;
+
   boolOps = {
     "and" = x: y: x && y;
     "or" = x: y: x || y;
-    "in" = elem;
-    "not in" = x: y: !(elem x y);
+    "in" = inEnum;
+    "not in" = x: y: !(inEnum x y);
   };
 
   primitives = [
@@ -280,7 +286,7 @@ in
         in
         groupTokens [ ] 0;
 
-      unquoteVariable = s: if markerFields ? ${s} then s else unquoteString s;
+      unquoteVariable = s: if isString s && markerFields ? ${s} then s else unquoteString s;
 
     in
     input:
@@ -340,25 +346,19 @@ in
                     }
                   # Value has a "not in"
                   else if notIdx > 0 then
-                    {
+                    rec {
                       type = "boolOp";
                       lhs = reduceValue lhs' (sublist' 0 notIdx value);
                       op = "not in";
-                      rhs = {
-                        type = "enum";
-                        value = concatMap (x: splitIn (unquoteVariable x)) (tailAt (notIdx + 1) value);
-                      };
+                      rhs = reduceInRhs lhs (tailAt (notIdx + 1) value);
                     }
                   # Value has a "in"
                   else if inIdx > 0 then
-                    {
+                    rec {
                       type = "boolOp";
                       lhs = reduceValue lhs' (sublist' 0 inIdx value);
                       op = "in";
-                      rhs = {
-                        type = "enum";
-                        value = concatMap (x: splitIn (unquoteVariable x)) (tailAt (inIdx + 1) value);
-                      };
+                      rhs = reduceInRhs lhs (tailAt (inIdx + 1) value);
                     }
                   else
                     throw "Unhandled state for input value: ${toJSON value}"
@@ -382,6 +382,23 @@ in
                   value = value';
                 }
             );
+
+        # Reduce the rhs of an `in`/`not in` expression.
+        #
+        # When the rhs is a single marker variable ('linux' in sys_platform) it is reduced
+        # to a value node so it can be compared against the lhs at evaluation time.
+        #
+        # Any other rhs is represented as an `enum` of its individual string members
+        # (platform_machine in 'x86_64 aarch64').
+        reduceInRhs =
+          lhs: rhsTokens:
+          if length rhsTokens == 1 && isString (head rhsTokens) && markerFields ? ${head rhsTokens} then
+            reduceValue lhs rhsTokens
+          else
+            {
+              type = "enum";
+              value = map toLower (concatMap (x: splitIn (unquoteVariable x)) rhsTokens);
+            };
 
       in
       reduceValue { } groupedTokens;
@@ -756,7 +773,7 @@ in
         value.value
       else if elem value.type primitives then
         value.value
-      else if value.type == "enum" then # Special type for `in`
+      else if value.type == "enum" then # Special type for `in`/`not in` enum members
         value.value
       else
         throw "Unknown type '${value.type}'"

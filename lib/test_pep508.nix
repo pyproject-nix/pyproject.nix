@@ -238,15 +238,15 @@ fix (self: {
             type = "enum";
             value = [
               "x86_64"
-              "X86_64"
+              "x86_64"
               "aarch64"
-              "AARCH64"
+              "aarch64"
               "ppc64le"
-              "PPC64LE"
+              "ppc64le"
               "amd64"
-              "AMD64"
+              "amd64"
               "win32"
-              "WIN32"
+              "win32"
             ];
           };
           type = "boolOp";
@@ -287,20 +287,39 @@ fix (self: {
           op = "in";
           rhs = {
             type = "enum";
+            # Members are lowercased and (but not dedup) at parse time.
             value = [
               "x86_64"
-              "X86_64"
+              "x86_64"
               "aarch64"
-              "AARCH64"
+              "aarch64"
               "ppc64le"
-              "PPC64LE"
+              "ppc64le"
               "amd64"
-              "AMD64"
+              "amd64"
               "win32"
-              "WIN32"
+              "win32"
             ];
           };
           type = "boolOp";
+        };
+        type = "boolOp";
+      };
+    };
+
+    # Regression test for https://github.com/pyproject-nix/pyproject.nix/issues/445
+    # The `in` operator may have a string literal on the lhs and a variable on the rhs.
+    testInOperatorLiteralLhs = {
+      expr = pep508.parseMarkers "'linux' in sys_platform";
+      expected = {
+        lhs = {
+          type = "string";
+          value = "linux";
+        };
+        op = "in";
+        rhs = {
+          type = "variable";
+          value = "sys_platform";
         };
         type = "boolOp";
       };
@@ -1070,6 +1089,118 @@ fix (self: {
             markers = pep508.parseMarkers "platform_release >= '6.5.0-1025-azure'";
           };
           expected = false;
+        };
+
+        # Regression tests for https://github.com/pyproject-nix/pyproject.nix/issues/445
+        testInOperatorLiteralLhs = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "'linux' in sys_platform";
+          };
+          expected = true;
+        };
+
+        testInOperatorLiteralLhsNoMatch = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "'win32' in sys_platform";
+          };
+          expected = false;
+        };
+
+        testNotInOperatorLiteralLhs = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "'win32' not in sys_platform";
+          };
+          expected = true;
+        };
+
+        testInOperatorVariableLhs = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "platform_machine in 'x86_64 X86_64 aarch64 AARCH64'";
+          };
+          expected = true;
+        };
+
+        testNotInOperatorVariableLhs = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "platform_machine not in 'aarch64 AARCH64 ppc64le'";
+          };
+          expected = true;
+        };
+
+        # `in`/`not in` comparisons are case-insensitive.
+        testInOperatorCaseInsensitiveEnum = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "platform_machine in 'X86_64'";
+          };
+          expected = true;
+        };
+
+        testInOperatorCaseInsensitiveVariable = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "'LINUX' in sys_platform";
+          };
+          expected = true;
+        };
+
+        # Compare an invalid type (returns false)
+        testInOperatorVersionFieldRhs = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "'3' in python_version";
+          };
+          expected = false;
+        };
+
+        testInOperatorVersionFieldLhs = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "python_version in '3.8 3.9'";
+          };
+          expected = false;
+        };
+
+        testInOperatorPlatformReleaseRhs = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "'6.10' in platform_release";
+          };
+          expected = false;
+        };
+
+        testInOperatorExtraListLhs = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected // {
+              extra = {
+                type = "extra";
+                value = [ "foo" ];
+              };
+            };
+            markers = pep508.parseMarkers "extra in 'foo bar'";
+          };
+          expected = false;
+        };
+
+        testInOperatorExtraListRhs = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected // {
+              extra = {
+                type = "extra";
+                value = [
+                  "foo"
+                  "bar"
+                ];
+              };
+            };
+            markers = pep508.parseMarkers "'foo' in extra";
+          };
+          expected = true;
         };
 
       };

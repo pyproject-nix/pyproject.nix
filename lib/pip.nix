@@ -65,9 +65,9 @@ lib.fix (self: {
         map uncomment (filter (l: typeOf l == "string") (split "\n" requirements'))
       );
 
-      endIdxs = concatMap (
-        i: if matchCont (elemAt lines' i) != null then [ ] else [ i ]
-      ) (genList (i: i) (length lines'));
+      endIdxs = concatMap (i: if matchCont (elemAt lines' i) != null then [ ] else [ i ]) (
+        genList (i: i) (length lines')
+      );
 
       lines = genList (
         i:
