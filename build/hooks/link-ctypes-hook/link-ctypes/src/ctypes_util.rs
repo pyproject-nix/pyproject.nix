@@ -304,12 +304,42 @@ pub fn dyld_find(
     all_paths = apply_image_suffix(all_paths);
 
     for path in all_paths {
-        if path.exists() {
+        // On macOS 11+ system libraries (e.g. libc) only live inside the dyld
+        // shared cache and have no on-disk file, so a plain existence check is
+        // not enough. Mirror CPython's ctypes.util, which also consults
+        // `_dyld_shared_cache_contains_path` for exactly this reason.
+        if path.exists() || shared_cache_contains_path(&path) {
             return Ok(path);
         }
     }
 
     Err(format!("dyld: Library not loaded: {}", name))
+}
+
+// Returns whether `path` is contained in the dyld shared cache.
+//
+// `_dyld_shared_cache_contains_path` is available since macOS 11 and is linked
+// from libSystem. On non-macOS targets there is no shared cache, so this is a
+// no-op (and the `find_library_darwin` path is never taken outside of `--mode
+// darwin` anyway).
+#[cfg(target_os = "macos")]
+fn shared_cache_contains_path(path: &Path) -> bool {
+    use std::ffi::CString;
+    use std::os::raw::c_char;
+
+    unsafe extern "C" {
+        fn _dyld_shared_cache_contains_path(path: *const c_char) -> bool;
+    }
+
+    match CString::new(path.to_string_lossy().as_bytes()) {
+        Ok(c_path) => unsafe { _dyld_shared_cache_contains_path(c_path.as_ptr()) },
+        Err(_) => false,
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn shared_cache_contains_path(_path: &Path) -> bool {
+    false
 }
 
 #[memoize(SharedCache)]

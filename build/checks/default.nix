@@ -175,18 +175,21 @@ let
           touch $out
         '';
 
-      # Test ctypes linking by checking that the build output
-      # contains a `libc = "/nix/store..."`
+      # Test ctypes linking by checking that the build output's `find_library("c")`
+      # call was rewritten to an absolute path. On Linux that resolves to a store
+      # path; on macOS libc only lives in the dyld shared cache, so it resolves to
+      # /usr/lib/libc.dylib (mirroring CPython's ctypes.util.find_library).
       link-ctypes =
         let
-          drv = testSet.myapp.overrideAttrs(old: {
+          drv = testSet.myapp.overrideAttrs (old: {
             nativeBuildInputs = old.nativeBuildInputs ++ [
               pythonSet.hooks.pyprojectLinkCtypesHook
             ];
           });
+          expectedLibc = if python.stdenv.isDarwin then "/usr/lib/libc.dylib" else builtins.storeDir;
         in
         pkgs.runCommand "link-ctypes-test" { } ''
-          grep "libc =" "${drv}/${python.sitePackages}/myapp/__init__.py" | grep '${builtins.storeDir}' > /dev/null
+          grep "libc =" "${drv}/${python.sitePackages}/myapp/__init__.py" | grep '${expectedLibc}' > /dev/null
           touch $out
         '';
     }
