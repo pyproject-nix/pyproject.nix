@@ -245,6 +245,51 @@ listToAttrs (
 // {
   # Tests that don't need to run on every supported interpreter
 
+  # Verify that `build-editable` forwards `--config-setting` to the build backend.
+  build-editable-config-settings =
+    let
+      buildEditable = pkgs.callPackage ../editable { };
+    in
+    pkgs.runCommand "build-editable-config-settings"
+      {
+        nativeBuildInputs = [
+          buildEditable
+          pkgs.python3
+        ];
+        uvBuildFlags = [
+          "-C"
+          "editable_mode=compat"
+          "--config-setting"
+          "foo=a"
+          "-C"
+          "foo=b"
+        ];
+      }
+      ''
+        set -eu
+
+        mkdir proj
+        cp -r ${./fixtures/editable-config-settings}/. proj/
+        chmod -R +w proj
+        cd proj
+
+        export PYTHONPATH="$PWD"
+        export EDITABLE_CONFIG_SETTINGS_RECORD="$PWD/received.txt"
+
+        build-editable --dist dist --python ${pkgs.python3.interpreter} $uvBuildFlags
+
+        received="$(cat received.txt)"
+        expected="{'editable_mode': 'compat', 'foo': ['a', 'b']}"
+        echo "received: $received"
+        echo "expected: $expected"
+        if [ "$received" != "$expected" ]; then
+          echo "config_settings were not forwarded correctly" >&2
+          exit 1
+        fi
+
+        touch $out
+      '';
+
   make-venv-empty =
     let
       python = pkgs.python3;

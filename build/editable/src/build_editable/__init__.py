@@ -1,4 +1,5 @@
 import argparse
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -7,7 +8,6 @@ from contextlib import contextmanager
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, Union, cast
-import shutil
 
 # Backwards compat with old Python for sandbox builds.
 if sys.version_info >= (3, 11):
@@ -24,7 +24,26 @@ class ArgsNS(argparse.Namespace):
     python: str  # pyright: ignore[reportUninitializedInstanceVariable]
     dist: str  # pyright: ignore[reportUninitializedInstanceVariable]
     verbose: str  # pyright: ignore[reportUninitializedInstanceVariable]
+    config_settings: list[str]  # pyright: ignore[reportUninitializedInstanceVariable]
 
+
+def parse_config_settings(items: list[str]) -> dict[str, Union[str, list[str]]]:
+    """Parse PEP-517 config settings and pass on to build backend"""
+
+    config_settings: dict[str, Union[str, list[str]]] = {}
+    for item in items:
+        key, sep, value = item.partition("=")
+        if not sep:
+            raise BuildError(f"Invalid config setting '{item}', expected KEY=VALUE")
+
+        existing = config_settings.get(key)
+        if existing is None:
+            config_settings[key] = value
+        elif isinstance(existing, list):
+            existing.append(value)
+        else:
+            config_settings[key] = [existing, value]
+    return config_settings
 
 
 def python_interpreter() -> str:
@@ -44,6 +63,15 @@ arg_parser.add_argument(
     "--dist",
     help="Write build results to dist directory",
     default=None,
+)
+arg_parser.add_argument(
+    "-C",
+    "--config-setting",
+    action="append",
+    default=[],
+    dest="config_settings",
+    metavar="KEY=VALUE",
+    help="Settings to pass to the PEP-517 build backend, specified as KEY=VALUE pairs",
 )
 arg_parser.add_argument("-v", "--verbose", action="store_true")
 
@@ -69,6 +97,8 @@ def dist_dir(arg: Union[str, None]) -> Generator[Path]:
 def main():
     args = arg_parser.parse_args(namespace=ArgsNS)
     cwd = Path.cwd()
+
+    config_settings = parse_config_settings(args.config_settings)
 
     with open(cwd.joinpath("pyproject.toml"), "rb") as pyproject_file:
         pyproject: dict[str, Any] = tomllib.load(pyproject_file)  # pyright: ignore[reportUnknownMemberType,reportExplicitAny,reportUnknownVariableType]
@@ -105,7 +135,7 @@ def main():
         backend = importlib.import_module("{backend_module}")
         if "{backend_attr}" != "":
             backend = getattr(backend, "{backend_attr}")
-        backend.build_editable("{dist}")
+        backend.build_editable("{dist}", {config_settings!r})
         """).encode()
         )
 
