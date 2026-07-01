@@ -1,6 +1,7 @@
 {
   lib,
   resolvers,
+  pyproject-nix,
 }:
 let
   inherit (resolvers) resolveCyclic resolveNonCyclic;
@@ -70,7 +71,7 @@ let
           );
         });
 
-      hooks = pkgsFinal.callPackage ./hooks { };
+      hooks = pkgsFinal.callPackage ./hooks { inherit pyproject-nix; };
       inherit (pkgsFinal.hooks)
         pyprojectConfigureHook
         pyprojectBuildHook
