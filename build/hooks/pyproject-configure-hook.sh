@@ -12,6 +12,8 @@ pyprojectConfigurePhase() {
   # information from the cross compiled Python.
   export PYTHONPATH=@pythonPath@
 
+  @crossSetup@
+
   # Compile bytecode by default.
   if [ -z "${UV_COMPILE_BYTECODE-}" ]; then
     export UV_COMPILE_BYTECODE=1

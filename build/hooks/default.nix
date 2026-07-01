@@ -7,25 +7,49 @@
   stdenv,
   hooks,
   runCommand,
+  pyproject-nix,
   # Note: Deprecated in 25.05 and slated for removal.
   # Only used for old nixpkgs compat.
   substituteAll ? null,
-  replaceVars ? script: replacements: substituteAll ({
-    # Nixpkgs older than 24.11 does not have replaceVars.
-    # This is a "we have replaceVars at home"
-    src = script;
-  } // replacements),
+  replaceVars ?
+    script: replacements:
+    substituteAll (
+      {
+        # Nixpkgs older than 24.11 does not have replaceVars.
+        # This is a "we have replaceVars at home"
+        src = script;
+      }
+      // replacements
+    ),
 }:
 let
+  inherit (pyproject-nix.lib.pep599) manyLinuxTargetMachines;
+  inherit (builtins) functionArgs;
+  inherit (pkgs) buildPackages;
+  inherit (lib) optionalString;
+
   # Set with fallback for old nixpkgs compat
   pythonOnBuildForHost = python.pythonOnBuildForHost or python.pythonForBuild;
-
-  inherit (builtins) functionArgs;
-
-  inherit (pkgs) buildPackages;
   pythonSitePackages = python.sitePackages;
 
   isCross = stdenv.buildPlatform != stdenv.hostPlatform;
+
+  # Make build backends and uv's interpreter discovery see the target platform.
+  crossSetup = optionalString isCross (
+    let
+      inherit (stdenv.hostPlatform) parsed;
+      machdep = if stdenv.hostPlatform.isWindows then "win32" else parsed.kernel.name;
+      pythonHostPlatform = "${machdep}-${
+        manyLinuxTargetMachines.${parsed.cpu.name} or parsed.cpu.name
+      }";
+    in
+    ''
+      ${optionalString (stdenv.buildPlatform.isLinux || !stdenv.hostPlatform.isLinux) "export _PYTHON_HOST_PLATFORM='${pythonHostPlatform}'"}
+      for f in ${python}/${pythonSitePackages}/_sysconfigdata_*.py; do
+        export _PYTHON_SYSCONFIGDATA_NAME="$(basename "$f" .py)"
+      done
+    ''
+  );
 
   # When cross compiling create a virtual environment for the build.
   #
@@ -75,6 +99,7 @@ in
             "${python}/${python.sitePackages}"
           ]
         );
+        inherit crossSetup;
       };
     } ./pyproject-configure-hook.sh
   ) { };
@@ -219,14 +244,9 @@ in
           ++ extraHooks;
         } ./meta-hook.sh
       )
-      (
-        {
-          python = pythonOnBuildForHost;
-        }
-        // lib.optionalAttrs isCross {
-          pyprojectInstallHook = hooks.pyprojectPypaInstallHook;
-        }
-      );
+      {
+        python = pythonOnBuildForHost;
+      };
 
   /*
     Hook used to build prebuilt wheels.
@@ -281,7 +301,8 @@ in
   /*
     Install hook using pypa/installer.
 
-    Used instead of `pyprojectInstallHook` for cross compilation support.
+    Kept for backwards compatibility; `pyprojectInstallHook` now handles cross
+    compilation via `_PYTHON_HOST_PLATFORM` set by `pyprojectConfigureHook`.
   */
   pyprojectPypaInstallHook = callPackage (
     { pythonPkgsBuildHost }:
