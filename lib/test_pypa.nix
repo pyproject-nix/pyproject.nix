@@ -342,6 +342,32 @@ in
           "ios_12_6_arm64_iphoneos";
       expected = false;
     };
+
+    testAndroidCompatible = {
+      expr =
+        isPlatformTagCompatible
+          (lib.systems.elaborate {
+            system = "aarch64-linux-android";
+            androidSdkVersion = "34";
+            androidNdkVersion = "26";
+          })
+          mocks.cpythonLinux38.stdenv.cc.libc
+          "android_32_arm64_v8a";
+      expected = true;
+    };
+
+    testAndroidIncompatibleSdk = {
+      expr =
+        isPlatformTagCompatible
+          (lib.systems.elaborate {
+            system = "aarch64-linux-android";
+            androidSdkVersion = "21";
+            androidNdkVersion = "26";
+          })
+          mocks.cpythonLinux38.stdenv.cc.libc
+          "android_32_arm64_v8a";
+      expected = false;
+    };
   };
 
   isWheelFileCompatible = {

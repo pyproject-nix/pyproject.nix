@@ -342,7 +342,7 @@ lib.fix (self: {
     else if hasPrefix "android" platformTag then
       # e.g., android_32_arm64_v8a
       let
-        m = match "android_([0-9])+_(.+)" platformTag;
+        m = match "android_([0-9]+)_(.+)" platformTag;
         apiLevel = elemAt m 0;
         abi = elemAt m 1;
       in
