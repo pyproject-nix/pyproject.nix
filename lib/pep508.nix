@@ -31,7 +31,12 @@ let
     split
     concatMap
     ;
-  inherit (lib) hasPrefix toLower take;
+  inherit (lib)
+    hasPrefix
+    hasInfix
+    toLower
+    take
+    ;
   inherit (import ./lib.nix)
     splitComma
     stripStr
@@ -143,7 +148,13 @@ let
     let
       lower = v: if isString v then toLower v else v;
     in
-    x: y: if isList y then elem (lower x) y else lower x == lower y;
+    x: y:
+    if isList y then
+      elem (lower x) y
+    else if isString x && isString y then
+      hasInfix (toLower x) (toLower y)
+    else
+      x == y;
 
   boolOps = {
     "and" = x: y: x && y;

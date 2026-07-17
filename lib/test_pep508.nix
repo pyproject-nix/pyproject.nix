@@ -1159,6 +1159,27 @@ fix (self: {
           expected = true;
         };
 
+        # `in` against a marker variable uses substring matching, not equality.
+        testInOperatorSubstring = {
+          input = {
+            environ = setEnviron self.mkEnviron.testPython38Linux.expected {
+              platform_machine = "armv7l";
+            };
+            markers = pep508.parseMarkers "'arm' in platform_machine";
+          };
+          expected = true;
+        };
+
+        testNotInOperatorSubstring = {
+          input = {
+            environ = setEnviron self.mkEnviron.testPython38Linux.expected {
+              platform_machine = "armv7l";
+            };
+            markers = pep508.parseMarkers "'arm' not in platform_machine";
+          };
+          expected = false;
+        };
+
         # Compare an invalid type (returns false)
         testInOperatorVersionFieldRhs = {
           input = {
