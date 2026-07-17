@@ -21,6 +21,16 @@ let
         glibc_2_5 = mkMock "glibc" "2.5" "x86_64";
         musl_1_2_3 = mkMock "musl" "1.2.3" "x86_64";
       };
+      powerpc64le-linux.musl_1_2_3 = {
+        cc.libc = {
+          pname = "musl";
+          version = "1.2.3";
+        };
+        targetPlatform = lib.systems.elaborate {
+          system = "powerpc64le-linux";
+          config = "powerpc64le-unknown-linux-musl";
+        };
+      };
     };
 
 in
@@ -56,6 +66,22 @@ in
         muslLinuxTagCompatible mockStdenvs.x86_64-linux.musl_1_2_3.targetPlatform
           mockStdenvs.x86_64-linux.musl_1_2_3.cc.libc
           "musllinux_1_1_armv7l";
+      expected = false;
+    };
+
+    testPpc64leCompatible = {
+      expr =
+        muslLinuxTagCompatible mockStdenvs.powerpc64le-linux.musl_1_2_3.targetPlatform
+          mockStdenvs.powerpc64le-linux.musl_1_2_3.cc.libc
+          "musllinux_1_2_ppc64le";
+      expected = true;
+    };
+
+    testPpc64leArchIncompatible = {
+      expr =
+        muslLinuxTagCompatible mockStdenvs.powerpc64le-linux.musl_1_2_3.targetPlatform
+          mockStdenvs.powerpc64le-linux.musl_1_2_3.cc.libc
+          "musllinux_1_2_x86_64";
       expected = false;
     };
   };

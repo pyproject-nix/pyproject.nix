@@ -43,7 +43,9 @@ in
       false
     else if compareVersions "${sysMajor}.${sysMinor}" "${tagMajor}.${tagMinor}" < 0 then
       false
-    else if pep599.manyLinuxTargetMachines.${tagArch} != platform.parsed.cpu.name then
+    else if
+      (pep599.manyLinuxTargetMachines.${platform.parsed.cpu.name} or platform.parsed.cpu.name) != tagArch
+    then
       false
     else
       true;
