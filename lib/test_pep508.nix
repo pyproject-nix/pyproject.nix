@@ -899,7 +899,17 @@ fix (self: {
         testPython311Darwin = mocks.cpythonDarwin311;
         testPython311DarwinAarch64 = mocks.cpythonDarwin311Aarch64;
         testPypy3Linux = mocks.pypy39Linux;
+      }
+    // {
+      testFreeBSDPlatformRelease = {
+        expr =
+          let
+            v = (pep508.mkEnviron mocks.cpythonFreeBSD311).platform_release.value;
+          in
+          v.str or v;
+        expected = "14.1-RELEASE";
       };
+    };
 
   setEnviron =
     let

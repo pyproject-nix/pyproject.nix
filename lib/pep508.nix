@@ -31,11 +31,10 @@ let
     split
     concatMap
     ;
-  inherit (lib) hasPrefix toLower;
+  inherit (lib) hasPrefix toLower take;
   inherit (import ./lib.nix)
     splitComma
     stripStr
-    take
     sublist'
     tailAt
     toInt

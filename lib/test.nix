@@ -27,6 +27,7 @@ let
           implementation ? "cpython",
           isLinux ? false,
           isDarwin ? false,
+          isFreeBSD ? false,
           linuxVersion ? "6.10",
           system,
         }:
@@ -161,6 +162,11 @@ let
                   libc.pname = "libSystem";
                   libc.version = "11.0.0";
                 }
+              else if isFreeBSD then
+                {
+                  libc.pname = "libc";
+                  libc.version = "14.1.0";
+                }
               else
                 throw "NO U";
           };
@@ -192,6 +198,15 @@ let
         sourceVersion.major = "3";
         sourceVersion.minor = "11";
         system = "aarch64-darwin";
+      };
+
+      cpythonFreeBSD311 = mkPython {
+        version = "3.11.4";
+        pythonVersion = "3.11";
+        isFreeBSD = true;
+        sourceVersion.major = "3";
+        sourceVersion.minor = "11";
+        system = "x86_64-freebsd";
       };
 
       pypy39Linux = mkPython {
