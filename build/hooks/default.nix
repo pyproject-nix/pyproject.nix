@@ -44,7 +44,7 @@ let
       }";
     in
     ''
-      ${optionalString (stdenv.buildPlatform.isLinux || !stdenv.hostPlatform.isLinux) "export _PYTHON_HOST_PLATFORM='${pythonHostPlatform}'"}
+      export _PYTHON_HOST_PLATFORM='${pythonHostPlatform}'
       for f in ${python}/${pythonSitePackages}/_sysconfigdata_*.py; do
         export _PYTHON_SYSCONFIGDATA_NAME="$(basename "$f" .py)"
       done
