@@ -18,7 +18,10 @@ let
     ;
   inherit (import ./lib.nix) stripStr;
 
-  uncomment = l: head (match " *([^#]*).*" l);
+  # A `#` starts a comment only at the beginning of a line or when preceded by
+  # whitespace, so URL fragments like `#egg=` / `#sha256=` are preserved.
+  uncomment =
+    l: if match "[\t ]*(#.*)?" l != null then "" else head (split "[\t ]+#" l);
 
 in
 lib.fix (self: {

@@ -77,6 +77,24 @@ in
       ];
     };
 
+    testUrlFragment = {
+      expr = parseRequirementsTxt ''
+        pip @ https://github.com/pypa/pip/archive/1.3.1.zip#sha1=da9234ee9982d4bbb3c72346a6de940a148ea686  # inline comment
+      '';
+      expected = [
+        {
+          flags = [ ];
+          requirement = {
+            conditions = [ ];
+            extras = [ ];
+            markers = null;
+            name = "pip";
+            url = "https://github.com/pypa/pip/archive/1.3.1.zip#sha1=da9234ee9982d4bbb3c72346a6de940a148ea686";
+          };
+        }
+      ];
+    };
+
     testRecursive = {
       expr = parseRequirementsTxt ./fixtures/requirements-recursive.txt;
       expected = [
