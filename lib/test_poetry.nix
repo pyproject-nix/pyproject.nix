@@ -125,6 +125,44 @@ in
       ];
     };
 
+    testTildeMinor = {
+      expr = parseVersionCond "~1.2";
+      expected = [
+        {
+          op = ">=";
+          version = {
+            dev = null;
+            epoch = 0;
+            local = null;
+            post = null;
+            pre = null;
+            release = [
+              1
+              2
+              0
+            ];
+            str = "1.2.0";
+          };
+        }
+        {
+          op = "<";
+          version = {
+            dev = null;
+            epoch = 0;
+            local = null;
+            post = null;
+            pre = null;
+            release = [
+              1
+              3
+              0
+            ];
+            str = "1.3.0";
+          };
+        }
+      ];
+    };
+
     # Regression test: Check that ~= isn't parsed as ~
     testTildeEquals = {
       expr = parseVersionCond "~=3.2.1";

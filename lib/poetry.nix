@@ -272,15 +272,19 @@ lib.fix (
             {
               op = "<";
               version = version // rec {
-                release = lib.imap0 (
-                  i: tok:
-                  if i >= segments - 1 then
-                    0
-                  else if i == segments - 2 then
-                    (tok + 1)
-                  else
-                    tok
-                ) version.release;
+                release =
+                  let
+                    incIdx = if segments <= 1 then 0 else 1;
+                  in
+                  lib.imap0 (
+                    i: tok:
+                    if i == incIdx then
+                      tok + 1
+                    else if i > incIdx then
+                      0
+                    else
+                      tok
+                  ) version.release;
                 str = concatStringsSep "." (map toString release); # Overwrite with upper bounds
               };
             }
