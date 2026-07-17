@@ -113,7 +113,7 @@ let
     else if prioX > prioY then
       1
     else
-      0;
+      -1;
 
 in
 fix (self: {

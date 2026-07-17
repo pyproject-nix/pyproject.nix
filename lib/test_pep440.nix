@@ -286,6 +286,16 @@ in
       expected = 1;
     };
 
+    testAlphaLtRc = {
+      expr = compareVersions (parseVersion "1.0a1") (parseVersion "1.0rc1");
+      expected = -1;
+    };
+
+    testRcGtAlpha = {
+      expr = compareVersions (parseVersion "1.0rc1") (parseVersion "1.0a1");
+      expected = 1;
+    };
+
     testComplex = {
       expr = compareVersions (parseVersion "1.0b2.post345.dev456") (parseVersion "1.0b2.post345");
       expected = -1;
