@@ -326,6 +326,22 @@ in
           "macosx_11_0_universal2";
       expected = true;
     };
+
+    testIosCompatible = {
+      expr =
+        isPlatformTagCompatible (lib.systems.elaborate "aarch64-ios" // { darwinSdkVersion = "12.5"; })
+          mocks.cpythonDarwin311.stdenv.cc.libc
+          "ios_12_4_arm64_iphoneos";
+      expected = true;
+    };
+
+    testIosIncompatibleSdk = {
+      expr =
+        isPlatformTagCompatible (lib.systems.elaborate "aarch64-ios" // { darwinSdkVersion = "12.5"; })
+          mocks.cpythonDarwin311.stdenv.cc.libc
+          "ios_12_6_arm64_iphoneos";
+      expected = false;
+    };
   };
 
   isWheelFileCompatible = {

@@ -332,7 +332,7 @@ lib.fix (self: {
       let
         m = match "ios_([0-9]+)_([0-9]+)_(.+)_.+" platformTag;
         major = elemAt m 0;
-        minor = elemAt m 0;
+        minor = elemAt m 1;
         arch = elemAt m 2;
       in
       assert m != null;
