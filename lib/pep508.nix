@@ -766,7 +766,7 @@ in
             # `Extra` environment marker comparison requires special casing because it's equality checks can
             # == can be considered a `"key" in set` comparison when multiple extras are activated for a dependency.
             # If we didn't treat it this way the check would become quadratic as `evalMarkers` only could check one extra at a time.
-            else if value.lhs.type == "variable" || value.lhs.value == "extra" then
+            else if value.lhs.type == "variable" && value.lhs.value == "extra" then
               extraComparators.${value.op}
             # Simple equality
             else

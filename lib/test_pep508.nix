@@ -1180,6 +1180,16 @@ fix (self: {
           expected = false;
         };
 
+        # Ordering comparisons on non-`extra` string markers fall through to the
+        # plain comparators rather than the `extra` special-case.
+        testStringMarkerOrdering = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "os_name >= 'posix'";
+          };
+          expected = true;
+        };
+
         # Compare an invalid type (returns false)
         testInOperatorVersionFieldRhs = {
           input = {
