@@ -285,6 +285,40 @@ fix (self: {
       };
     };
 
+    # PEP-508 string literals may be empty.
+    testEmptyStringLiteral = {
+      expr = pep508.parseMarkers "os_name == ''";
+      expected = {
+        lhs = {
+          type = "variable";
+          value = "os_name";
+        };
+        op = "==";
+        rhs = {
+          type = "string";
+          value = "";
+        };
+        type = "compare";
+      };
+    };
+
+    # A single quoted string literal may contain double quotes.
+    testStringLiteralWithDoubleQuote = {
+      expr = pep508.parseMarkers "os_name == 'a\"b'";
+      expected = {
+        lhs = {
+          type = "variable";
+          value = "os_name";
+        };
+        op = "==";
+        rhs = {
+          type = "string";
+          value = "a\"b";
+        };
+        type = "compare";
+      };
+    };
+
     # Regression test for https://github.com/pyproject-nix/pyproject.nix/issues/445
     # The `in` operator may have a string literal on the lhs and a variable on the rhs.
     testInOperatorLiteralLhs = {
@@ -1239,6 +1273,24 @@ fix (self: {
               platform_release = "6.5.0-1025-azure";
             };
             markers = pep508.parseMarkers "'azure' in platform_release";
+          };
+          expected = true;
+        };
+
+        # The empty string is a substring of everything.
+        testInOperatorEmptyStringLiteral = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "'' in platform_machine";
+          };
+          expected = true;
+        };
+
+        # mkEnviron leaves platform_version empty as it's not reproducible.
+        testEmptyStringLiteralCompare = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "platform_version == ''";
           };
           expected = true;
         };

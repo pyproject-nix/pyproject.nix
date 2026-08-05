@@ -203,12 +203,24 @@ let
 
   inherit (pep508) parseMarkers evalMarkers;
 
+  # PEP-508 string literals have no escape sequences: a single quoted string may contain
+  # double quotes and vice versa, but neither may contain its own quote character.
+  # Quotes are therefore stripped directly instead of round tripping through fromJSON,
+  # which chokes on both the empty string and embedded quotes.
+  #
+  # fromJSON is still used for bare unquoted values, which may be numbers or booleans.
   unquoteString =
     value:
     let
-      singleTicked = match "^'(.+)'$" value;
+      singleTicked = match "^'(.*)'$" value;
+      doubleTicked = match "^\"(.*)\"$" value;
     in
-    fromJSON (if singleTicked != null then "\"${head singleTicked}\"" else value);
+    if singleTicked != null then
+      head singleTicked
+    else if doubleTicked != null then
+      head doubleTicked
+    else
+      fromJSON value;
 
 in
 {
