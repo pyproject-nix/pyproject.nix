@@ -27,14 +27,12 @@ let
     splitVersion
     concatStringsSep
     tail
-    filter
     split
     concatMap
     ;
   inherit (lib)
     hasPrefix
     hasInfix
-    toLower
     take
     ;
   inherit (import ./lib.nix)
@@ -44,9 +42,6 @@ let
     tailAt
     toInt
     ;
-
-  # Split a string literal `in` enum into its individual members on whitespace/commas.
-  splitIn = s: filter isString (split "[, ]+" s);
 
   # Marker fields + their parsers
   markerFields =
@@ -144,23 +139,41 @@ let
     "===" = a: b: a == b;
   };
 
-  inEnum =
+  # `in`/`not in` implement Python's `in` operator: a case sensitive substring check.
+  #
+  # In PEP-508 every environment marker is a plain string, so the comparison is done on
+  # the string form of both operands. Marker fields that were parsed into structured values
+  # (`python_version` & friends, and `platform_release` when PEP-440 compliant) retain their
+  # input verbatim in `str`, which is what Python would have compared.
+  #
+  # Note that unlike `==` no case folding is performed. This is why markers in the wild
+  # spell out both cases (`platform_machine in 'x86_64 X86_64 aarch64 AARCH64'`).
+  #
+  # As an extension over PEP-508 the `extra` environment field may hold a _list_ of activated
+  # extras, in which case membership is checked against the list.
+  # See extraComparators for the same special casing of `==`/`!=`.
+  inOp =
     let
-      lower = v: if isString v then toLower v else v;
+      # Structured marker values keep their input string in `str`.
+      toStr = v: v.str or v;
     in
     x: y:
     if isList y then
-      elem (lower x) y
-    else if isString x && isString y then
-      hasInfix (toLower x) (toLower y)
+      elem (toStr x) y
     else
-      x == y;
+      (
+        let
+          x' = toStr x;
+          y' = toStr y;
+        in
+        isString x' && isString y' && hasInfix x' y'
+      );
 
   boolOps = {
     "and" = x: y: x && y;
     "or" = x: y: x || y;
-    "in" = inEnum;
-    "not in" = x: y: !(inEnum x y);
+    "in" = inOp;
+    "not in" = x: y: !(inOp x y);
   };
 
   primitives = [
@@ -398,16 +411,17 @@ in
         # When the rhs is a single marker variable ('linux' in sys_platform) it is reduced
         # to a value node so it can be compared against the lhs at evaluation time.
         #
-        # Any other rhs is represented as an `enum` of its individual string members
-        # (platform_machine in 'x86_64 aarch64').
+        # Any other rhs is kept as a verbatim string. Unlike the rhs of a comparison it's
+        # deliberately _not_ parsed using the lhs marker field's parser, as `in` is a substring
+        # check against the unparsed string (platform_machine in 'x86_64 aarch64').
         reduceInRhs =
           lhs: rhsTokens:
           if length rhsTokens == 1 && isString (head rhsTokens) && markerFields ? ${head rhsTokens} then
             reduceValue lhs rhsTokens
           else
             {
-              type = "enum";
-              value = map toLower (concatMap (x: splitIn (unquoteVariable x)) rhsTokens);
+              type = "string";
+              value = concatStringsSep " " (map unquoteVariable rhsTokens);
             };
 
       in
@@ -782,8 +796,6 @@ in
       else if value.type == "version" || value.type == "extra" || value.type == "platform_release" then
         value.value
       else if elem value.type primitives then
-        value.value
-      else if value.type == "enum" then # Special type for `in`/`not in` enum members
         value.value
       else
         throw "Unknown type '${value.type}'"

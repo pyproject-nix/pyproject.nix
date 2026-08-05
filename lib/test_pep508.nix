@@ -235,19 +235,8 @@ fix (self: {
           };
           op = "not in";
           rhs = {
-            type = "enum";
-            value = [
-              "x86_64"
-              "x86_64"
-              "aarch64"
-              "aarch64"
-              "ppc64le"
-              "ppc64le"
-              "amd64"
-              "amd64"
-              "win32"
-              "win32"
-            ];
+            type = "string";
+            value = "x86_64 X86_64 aarch64 AARCH64 ppc64le PPC64LE amd64 AMD64 win32 WIN32";
           };
           type = "boolOp";
         };
@@ -286,20 +275,9 @@ fix (self: {
           };
           op = "in";
           rhs = {
-            type = "enum";
-            # Members are lowercased and (but not dedup) at parse time.
-            value = [
-              "x86_64"
-              "x86_64"
-              "aarch64"
-              "aarch64"
-              "ppc64le"
-              "ppc64le"
-              "amd64"
-              "amd64"
-              "win32"
-              "win32"
-            ];
+            # The rhs of an `in` is kept verbatim: it's a substring check, not a set membership test.
+            type = "string";
+            value = "x86_64 X86_64 aarch64 AARCH64 ppc64le PPC64LE amd64 AMD64 win32 WIN32";
           };
           type = "boolOp";
         };
@@ -1142,19 +1120,40 @@ fix (self: {
           expected = true;
         };
 
-        # `in`/`not in` comparisons are case-insensitive.
-        testInOperatorCaseInsensitiveEnum = {
+        # `in`/`not in` are case _sensitive_, as in Python.
+        # This is why markers in the wild spell out both cases.
+        testInOperatorCaseSensitiveRhs = {
           input = {
             environ = self.mkEnviron.testPython38Linux.expected;
             markers = pep508.parseMarkers "platform_machine in 'X86_64'";
           };
-          expected = true;
+          expected = false;
         };
 
-        testInOperatorCaseInsensitiveVariable = {
+        testInOperatorCaseSensitiveLhs = {
           input = {
             environ = self.mkEnviron.testPython38Linux.expected;
             markers = pep508.parseMarkers "'LINUX' in sys_platform";
+          };
+          expected = false;
+        };
+
+        # The rhs of an `in` is a string, not a set of members, so a marker variable
+        # matching only part of a member still matches.
+        testInOperatorPartialMember = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "sys_platform in 'linux2'";
+          };
+          expected = true;
+        };
+
+        testInOperatorPartialMemberMachine = {
+          input = {
+            environ = setEnviron self.mkEnviron.testPython38Linux.expected {
+              platform_machine = "ppc64";
+            };
+            markers = pep508.parseMarkers "platform_machine in 'x86_64 aarch64 ppc64le'";
           };
           expected = true;
         };
@@ -1190,13 +1189,14 @@ fix (self: {
           expected = true;
         };
 
-        # Compare an invalid type (returns false)
+        # Version marker fields are compared using their input string, as in Python
+        # every environment marker is a plain string.
         testInOperatorVersionFieldRhs = {
           input = {
             environ = self.mkEnviron.testPython38Linux.expected;
             markers = pep508.parseMarkers "'3' in python_version";
           };
-          expected = false;
+          expected = true;
         };
 
         testInOperatorVersionFieldLhs = {
@@ -1204,7 +1204,23 @@ fix (self: {
             environ = self.mkEnviron.testPython38Linux.expected;
             markers = pep508.parseMarkers "python_version in '3.8 3.9'";
           };
+          expected = true;
+        };
+
+        testInOperatorVersionFieldLhsNoMatch = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "python_version in '3.6 3.7'";
+          };
           expected = false;
+        };
+
+        testInOperatorFullVersionField = {
+          input = {
+            environ = self.mkEnviron.testPython38Linux.expected;
+            markers = pep508.parseMarkers "python_full_version in '3.8.2'";
+          };
+          expected = true;
         };
 
         testInOperatorPlatformReleaseRhs = {
@@ -1212,7 +1228,19 @@ fix (self: {
             environ = self.mkEnviron.testPython38Linux.expected;
             markers = pep508.parseMarkers "'6.10' in platform_release";
           };
-          expected = false;
+          expected = true;
+        };
+
+        # platform_release retains substring semantics whether or not the value
+        # happens to parse as a PEP-440 version.
+        testInOperatorPlatformReleaseInvalidPep440 = {
+          input = {
+            environ = setEnviron self.mkEnviron.testPython38Linux.expected {
+              platform_release = "6.5.0-1025-azure";
+            };
+            markers = pep508.parseMarkers "'azure' in platform_release";
+          };
+          expected = true;
         };
 
         testInOperatorExtraListLhs = {
