@@ -42,9 +42,13 @@ let
       pythonHostPlatform = "${machdep}-${
         manyLinuxTargetMachines.${parsed.cpu.name} or parsed.cpu.name
       }";
+      # uv probes the interpreter while running on the build platform. Claiming a Linux
+      # host platform from a non-Linux builder makes it attempt glibc/musl detection
+      # against an interpreter that isn't ELF, which is a hard error.
+      hostNotBuild = stdenv.hostPlatform.isLinux && !stdenv.buildPlatform.isLinux;
     in
     ''
-      export _PYTHON_HOST_PLATFORM='${pythonHostPlatform}'
+      ${optionalString (!hostNotBuild) "export _PYTHON_HOST_PLATFORM='${pythonHostPlatform}'"}
       for f in ${python}/${pythonSitePackages}/_sysconfigdata_*.py; do
         export _PYTHON_SYSCONFIGDATA_NAME="$(basename "$f" .py)"
       done
