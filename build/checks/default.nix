@@ -130,6 +130,57 @@ let
         }
       ) { };
 
+      # A PEP-440 epoch puts `!` in the wheel filename, which isn't a valid store path character.
+      # A fetched wheel therefore gets a sanitized store name (`epoch_pkg-1-0.1.0-py3-none-any.whl`) that
+      # no longer matches the version in its metadata.
+      prebuilt-wheel-epoch =
+        let
+          epochWheel =
+            (pythonSet.pythonPkgsHostHost.callPackage (
+              {
+                stdenv,
+                pyprojectHook,
+                resolveBuildSystem,
+              }:
+              stdenv.mkDerivation {
+                pname = "epoch-pkg";
+                version = "1!0.1.0";
+                src = ./fixtures/epoch-pkg;
+                outputs = [
+                  "out"
+                  "dist"
+                ];
+                nativeBuildInputs = [ pyprojectHook ] ++ resolveBuildSystem { hatchling = [ ]; };
+              }
+            ) { }).dist;
+
+          testSet = pythonSet.pythonPkgsHostHost.overrideScope (
+            final: _prev: {
+              epoch-pkg = final.callPackage (
+                { stdenv, pyprojectWheelHook }:
+                stdenv.mkDerivation {
+                  pname = "epoch-pkg";
+                  version = "1!0.1.0";
+                  # Single file store path with the same sanitized name as fetchurl would produce
+                  src = pkgs.runCommand "epoch_pkg-1!0.1.0-py3-none-any.whl" { } ''
+                    cp ${epochWheel}/*.whl $out
+                  '';
+                  nativeBuildInputs = [ pyprojectWheelHook ];
+                }
+              ) { };
+            }
+          );
+
+          venv = testSet.mkVirtualEnv "prebuilt-wheel-epoch-env" {
+            epoch-pkg = [ ];
+          };
+        in
+        pkgs.runCommand "prebuilt-wheel-epoch-test" { nativeBuildInputs = [ venv ]; } ''
+          python -c 'import epoch_pkg'
+          python -c 'import importlib.metadata; assert importlib.metadata.version("epoch-pkg") == "1!0.1.0"'
+          touch $out
+        '';
+
       mkderivation =
         let
           testSet = pythonSet.pythonPkgsHostHost.overrideScope (

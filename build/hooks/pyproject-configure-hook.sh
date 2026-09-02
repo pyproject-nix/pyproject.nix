@@ -36,6 +36,12 @@ pyprojectConfigurePhase() {
     export UV_NO_CONFIG=1
   fi
 
+  # Store path names can't represent every wheel filename:
+  # Nix rejects the PEP-440 epoch separator (`!`) and nixpkgs' sanitizeDerivationName rewrites it to `-`.
+  if [ -z "${UV_SKIP_WHEEL_FILENAME_CHECK-}" ]; then
+    export UV_SKIP_WHEEL_FILENAME_CHECK=1
+  fi
+
   # Cmake has it's setup hook in the main package, which opts in to nixpkgs
   # cmake build behaviour
   if [ -z "${dontUseCmakeConfigure-}" ]; then
