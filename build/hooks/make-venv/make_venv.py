@@ -3,6 +3,7 @@ import argparse
 import contextlib
 import fnmatch
 import os.path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -273,9 +274,9 @@ def wrap_python_bin(bin: Path, target: Path):
     #
     # By replacing the Python interpreter symlink with a wrapper it can be
     # properly linked to in another derivation.
-    cc = os.environ.get("CC", "cc")
+    cc = shlex.split(os.environ.get("CC", "cc"))
     subprocess.run(
-        [cc, "-Wall", "-Werror", "-Wpedantic", "-Wno-overlength-strings", "-Os", "-x", "c", "-o", bin, "-"],
+        [*cc, "-Wall", "-Werror", "-Wpedantic", "-Wno-overlength-strings", "-Os", "-x", "c", "-o", bin, "-"],
         check=True,
         input=(
             """
