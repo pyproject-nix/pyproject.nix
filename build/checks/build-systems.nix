@@ -104,7 +104,6 @@ let
           stdenv,
           python3Packages,
           pyprojectHook,
-          flit-core,
           resolveBuildSystem,
         }:
         stdenv.mkDerivation {
@@ -274,7 +273,6 @@ let
           python3Packages,
           pyprojectHook,
           resolveBuildSystem,
-          setuptools-scm,
         }:
         stdenv.mkDerivation {
           inherit (python3Packages.pluggy)
@@ -519,7 +517,6 @@ let
           ++ resolveBuildSystem {
             setuptools = [ ];
             wheel = [ ];
-            # tomli = [ ];
             setuptools-rust = [ ];
           };
         };
@@ -546,11 +543,10 @@ let
             dependencies = {
               packaging = [ ];
               setuptools = [ ];
+              vcs-versioning = [ ];
             }
             // lib.optionalAttrs (python.pythonOlder "3.11") {
               tomli = [ ];
-            }
-            // lib.optionalAttrs (python.pythonOlder "3.10") {
               typing-extensions = [ ];
             };
 
@@ -570,9 +566,11 @@ let
           ++ resolveBuildSystem (
             {
               setuptools = [ ];
+              vcs-versioning = [ ];
             }
             // lib.optionalAttrs (python.pythonOlder "3.11") {
               tomli = [ ];
+              typing-extensions = [ ];
             }
           );
         };
@@ -609,6 +607,7 @@ let
           ++ resolveBuildSystem {
             setuptools = [ ];
             setuptools-scm = [ ];
+            vcs-versioning = [ ];
           };
         };
 
@@ -759,6 +758,41 @@ let
           };
         };
 
+      vcs-versioning =
+        {
+          stdenv,
+          pyprojectHook,
+          resolveBuildSystem,
+          fetchurl,
+          python,
+        }:
+        stdenv.mkDerivation {
+          pname = "vcs-versioning";
+          version = "2.6.0";
+
+          src = fetchurl {
+            url = "https://files.pythonhosted.org/packages/ad/e7/2a691db7d076b75d099fdba1a14cd966931f2aeb591e77f6d22f15097326/vcs_versioning-2.6.0.tar.gz";
+            hash = "sha256-IukVkoji2Lyi+m9sMcNMnGauwVf2Dp5Sb10WDSUW1g8=";
+          };
+
+          passthru = {
+            dependencies = {
+              packaging = [ ];
+            };
+          };
+
+          nativeBuildInputs = [
+            pyprojectHook
+          ]
+          ++ resolveBuildSystem (
+            {
+              setuptools = [ ];
+            }
+            // lib.optionalAttrs (python.pythonOlder "3.11") {
+              typing-extensions = [ ];
+            }
+          );
+        };
     };
 
   crossOverlay = lib.composeExtensions (_final: prev: {

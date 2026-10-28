@@ -343,7 +343,7 @@ in
             # Include any buildInputs from build for autoPatchelfHook
             buildInputs = from.buildInputs or [ ];
 
-            nativeBuildInputs = lib.optional stdenv.isLinux [
+            nativeBuildInputs = lib.optionals stdenv.isLinux [
               autoPatchelfHook
             ];
 
