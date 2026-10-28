@@ -59,6 +59,11 @@ let
               version = "0.5.5";
             };
 
+            installer = {
+              pname = "installer";
+              version = "1.0.0";
+            };
+
             matplotlib = {
               pname = "matplotlib";
               version = "3.9.0";

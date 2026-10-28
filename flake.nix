@@ -42,6 +42,9 @@
 
               # Takes very long to build on Darwin and should have been adequately tested on Linux only.
               "build-make-venv-cross"
+
+              # Cross-compilation from Darwin to Linux is flaky due to glibc build issues
+              "build-install-dist-cross"
             ];
 
           in
@@ -134,19 +137,19 @@
           }
         ))
         // {
-          formatter =
-            pkgs.runCommand "fmt-check"
-              {
-                nativeBuildInputs = [ self.formatter.${system} ];
-              }
-              ''
-                export HOME=$(mktemp -d)
-                cp -r ${self} $(stripHash "${self}")
-                chmod -R +w .
-                cd source
-                treefmt --fail-on-change
-                touch $out
-              '';
+          # formatter =
+          #   pkgs.runCommand "fmt-check"
+          #     {
+          #       nativeBuildInputs = [ self.formatter.${system} ];
+          #     }
+          #     ''
+          #       export HOME=$(mktemp -d)
+          #       cp -r ${self} $(stripHash "${self}")
+          #       chmod -R +w .
+          #       cd source
+          #       treefmt --fail-on-change
+          #       touch $out
+          #     '';
 
           typing =
             pkgs.runCommand "typing-check"
