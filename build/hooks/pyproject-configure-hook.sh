@@ -48,6 +48,12 @@ pyprojectConfigurePhase() {
     export dontUseCmakeConfigure=true
   fi
 
+  # Don't make uv load system certs by default,
+  # they don't exist in the build closure and makes http client construction fail.
+  if [ -z "${UV_SYSTEM_CERTS-}" ]; then
+    export UV_SYSTEM_CERTS=0
+  fi
+
   runHook postConfigure
   echo "Finished executing pyprojectConfigurePhase"
 }
