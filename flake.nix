@@ -45,6 +45,7 @@
 
               # Cross-compilation from Darwin to Linux is flaky due to glibc build issues
               "build-install-dist-cross"
+              "build-install-wheel-cross"
             ];
 
           in

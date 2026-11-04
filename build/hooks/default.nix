@@ -34,6 +34,14 @@ let
 
   isCross = stdenv.buildPlatform != stdenv.hostPlatform;
 
+  # uv probes the interpreter while running on the build platform. Claiming a Linux
+  # host platform from a non-Linux builder makes it attempt glibc/musl detection
+  # against an interpreter that isn't ELF, which is a hard error.
+  #
+  # So we can't make uv see the host platform, and `uv pip install` would reject
+  # wheels built for the host.
+  uvSeesBuildPlatform = stdenv.hostPlatform.isLinux && !stdenv.buildPlatform.isLinux;
+
   # Make build backends and uv's interpreter discovery see the target platform.
   crossSetup = optionalString isCross (
     let
@@ -42,13 +50,9 @@ let
       pythonHostPlatform = "${machdep}-${
         manyLinuxTargetMachines.${parsed.cpu.name} or parsed.cpu.name
       }";
-      # uv probes the interpreter while running on the build platform. Claiming a Linux
-      # host platform from a non-Linux builder makes it attempt glibc/musl detection
-      # against an interpreter that isn't ELF, which is a hard error.
-      hostNotBuild = stdenv.hostPlatform.isLinux && !stdenv.buildPlatform.isLinux;
     in
     ''
-      ${optionalString (!hostNotBuild) "export _PYTHON_HOST_PLATFORM='${pythonHostPlatform}'"}
+      ${optionalString (!uvSeesBuildPlatform) "export _PYTHON_HOST_PLATFORM='${pythonHostPlatform}'"}
       for f in ${python}/${pythonSitePackages}/_sysconfigdata_*.py; do
         export _PYTHON_SYSCONFIGDATA_NAME="$(basename "$f" .py)"
       done
@@ -248,9 +252,16 @@ in
           ++ extraHooks;
         } ./meta-hook.sh
       )
-      {
-        python = pythonOnBuildForHost;
-      };
+      (
+        {
+          python = pythonOnBuildForHost;
+        }
+        # pypa/installer doesn't check wheel tags against the interpreter, so it can install
+        # wheels for the host platform even when uv can only see the build platform.
+        // lib.optionalAttrs uvSeesBuildPlatform {
+          pyprojectInstallHook = hooks.pyprojectPypaInstallHook;
+        }
+      );
 
   /*
     Hook used to build prebuilt wheels.
@@ -305,8 +316,11 @@ in
   /*
     Install hook using pypa/installer.
 
-    Kept for backwards compatibility; `pyprojectInstallHook` now handles cross
-    compilation via `_PYTHON_HOST_PLATFORM` set by `pyprojectConfigureHook`.
+    `pyprojectHook` uses it instead of `pyprojectInstallHook` when cross compiling
+    from a non-Linux build platform to Linux. uv can't see the Linux host platform
+    from there, and would reject the host wheels.
+    Other cross builds use `pyprojectInstallHook` with `_PYTHON_HOST_PLATFORM`
+    set by `pyprojectConfigureHook`.
   */
   pyprojectPypaInstallHook = callPackage (
     { pythonPkgsBuildHost }:

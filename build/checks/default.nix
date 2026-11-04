@@ -365,6 +365,36 @@ listToAttrs (
       cffi = [ ];
     };
 
+  # Install a prebuilt binary wheel for the cross host platform.
+  # On a Darwin builder uv only sees the build platform, so the install must not check wheel tags.
+  install-wheel-cross =
+    let
+      pkgs' = pkgs.pkgsCross.aarch64-multiplatform;
+      crossSet =
+        (pkgs'.callPackage pyproject-nix.build.packages {
+          python = pkgs'.python3;
+        }).overrideScope
+          buildSystems;
+    in
+    crossSet.callPackage (
+      {
+        stdenv,
+        fetchurl,
+        pyprojectWheelHook,
+      }:
+      stdenv.mkDerivation {
+        pname = "bcrypt";
+        version = "5.0.0";
+
+        src = fetchurl {
+          url = "https://files.pythonhosted.org/packages/36/c4/ed00ed32f1040f7990dac7115f82273e3c03da1e1a1587a778d8cea496d8/bcrypt-5.0.0-cp39-abi3-manylinux_2_28_aarch64.whl";
+          hash = "sha256-8M53gTX2B5nYnJaTubOYgZ0V8ZIboV/nGayzF4IVp9s=";
+        };
+
+        nativeBuildInputs = [ pyprojectWheelHook ];
+      }
+    ) { };
+
   install-dist =
     let
       python = pkgs.python3;
