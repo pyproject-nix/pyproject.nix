@@ -12,7 +12,8 @@ def main():
 
     args = sys.argv[1:]
     if compile_bytecode:
-        args.insert(0, "1")
+        # Optimization level 0 writes plain .pyc files, like uv does.
+        args.insert(0, "0")
         args.insert(0, "--compile-bytecode")
 
     os.execv(sys.executable, [sys.executable, "-m", "installer", *args])
